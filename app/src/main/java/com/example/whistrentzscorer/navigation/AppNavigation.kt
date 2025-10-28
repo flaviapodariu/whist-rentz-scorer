@@ -38,6 +38,10 @@ fun AppNavigation(
             navController.popBackStack()
         }
     }
+    val goToHome = {
+        navController.navigate(Screen.Home.route)
+    }
+
     val onCreateGame = {
         navController.navigate(Screen.PlayersSetup.route)
     }
@@ -97,12 +101,14 @@ fun AppNavigation(
             )
         }
 
-        //todo
         composable(
             route = Screen.ScoreSheet.route
         ) {
             ScoreSheet(
-                onBack = { onBack() },
+                onBack = {
+                    // auto save game here
+                    goToHome()
+                },
                 gameConfigViewModel = sharedGameConfigViewModel
             )
         }
