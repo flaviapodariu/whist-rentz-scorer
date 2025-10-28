@@ -115,6 +115,7 @@ fun GameSetupScreen(
             if (viewModel.players.size >= 3) {
                 FloatingActionButton(onClick = {
                     coroutineScope.launch {
+                        viewModel.createNewGame()
                         onGameStarted()
                     }
                 }) {

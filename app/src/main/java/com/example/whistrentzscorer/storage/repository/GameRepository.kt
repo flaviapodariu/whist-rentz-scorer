@@ -1,6 +1,7 @@
 package com.example.whistrentzscorer.storage.repository
 
 import com.example.whistrentzscorer.objects.Game
+import com.example.whistrentzscorer.objects.toEntity
 import com.example.whistrentzscorer.storage.dao.GameDao
 import com.example.whistrentzscorer.storage.entity.GameEntity
 import com.example.whistrentzscorer.storage.entity.toDomain
@@ -12,8 +13,8 @@ class GameRepository @Inject constructor(
 ) {
     val allGames: Flow<List<GameEntity>> = gameDao.getAllGames()
 
-    suspend fun addGame(game: GameEntity): Long {
-        return gameDao.insertGame(game)
+    suspend fun addGame(game: Game): Long {
+        return gameDao.insertGame(game.toEntity())
     }
 
     suspend fun updateScore(gameId: Int, score: String) {

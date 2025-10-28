@@ -9,8 +9,8 @@ sealed class Screen(val route: String) {
 
     data object GameSetup : Screen("gameSetup")
 
-    data object GameSummary : Screen("summary/{playedGame}") {
-        fun passArgs(playedGame: String) = "summary/$playedGame"
+    data object RoundAction : Screen("round/{action}") {
+        fun passArgs(action: String) = "round/$action"
     }
     data object GamesHistory : Screen("history")
     data object ScoreSheet : Screen("scoresheet") {

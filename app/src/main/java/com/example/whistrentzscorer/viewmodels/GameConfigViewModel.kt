@@ -6,11 +6,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.whistrentzscorer.objects.Game
+import com.example.whistrentzscorer.storage.repository.GameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class GameConfigViewModel @Inject constructor(
+    private val gameRepository: GameRepository
 ) : ViewModel() {
 
     // mutable state vars
@@ -28,6 +31,17 @@ class GameConfigViewModel @Inject constructor(
     var zeroPointsWins by mutableStateOf(false)
 
    // business logic
+
+    suspend fun createNewGame() {
+        val newGame = Game(
+            timestamp = System.currentTimeMillis(),
+            players = getPlayerList(),
+            isFinished = false,
+            scoresJson = ""
+        )
+        gameRepository.addGame(newGame)
+    }
+
     fun getPlayerList(): List<String> = players.toList()
 
     fun addPlayer() {

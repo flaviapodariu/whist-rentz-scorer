@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Game(
-    val id: Int,
+    val id: Int = 0,
     val timestamp: Long,
     val players: List<String>,
     val isFinished: Boolean,
@@ -18,6 +18,6 @@ fun Game.toEntity(id: Int = 0): GameEntity {
         timestamp = timestamp,
         players = players.joinToString(separator = ","),
         isFinished = isFinished,
-        scoresJson = scoresJson
+        scoresJson = scoresJson,
     )
 }

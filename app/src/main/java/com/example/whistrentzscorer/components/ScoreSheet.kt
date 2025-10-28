@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.Purple80
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
@@ -46,9 +48,12 @@ import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 
 @Composable
 fun ScoreSheet(
+    // if round number = 0 allow going back to config setup page, else clear nav stack
     onBack: () -> Unit,
     gameConfigViewModel: GameConfigViewModel = hiltViewModel(),
-    gameStateViewModel: GameStateViewModel = hiltViewModel()
+    gameStateViewModel: GameStateViewModel = hiltViewModel(),
+    onBid: () -> Unit,
+    onInputResults: () -> Unit
 ) {
     var playerList by remember { mutableStateOf(emptyList<String>()) }
     val gameType = gameConfigViewModel.gameType
@@ -78,7 +83,10 @@ fun ScoreSheet(
         topBar = {
             WhistTopBar(
                 title = { Text(text = "") },
-                onBack = onBack
+                onBack = onBack,
+                isInGame = true,
+                onBid = onBid,
+                onInputResults = onInputResults
             )
         }
     ) { padding ->
@@ -86,22 +94,23 @@ fun ScoreSheet(
             Column(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxHeight(),
+                    .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
+                        .wrapContentSize()
                         .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
                     Column(
                         modifier = Modifier
-                            .fillMaxSize(),
+                            .wrapContentSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Top
                     ) {
-                        // header with players
-                        PlayersHeader(playerList, horizontalScrollState)
+
+                        PlayersHeader(playerList, gameStateViewModel.currentRound, horizontalScrollState)
 
                         Box(
                             modifier = Modifier
@@ -178,7 +187,7 @@ fun ScoringCells(
 }
 
 @Composable
-fun PlayersHeader(playerList: List<String>, scroll: ScrollState) {
+fun PlayersHeader(playerList: List<String>, round: Int, scroll: ScrollState) {
     Row(
         modifier = Modifier
             .horizontalScroll(scroll)
@@ -195,7 +204,15 @@ fun PlayersHeader(playerList: List<String>, scroll: ScrollState) {
             Text(text = "", fontWeight = FontWeight.Bold)
         }
 
-        playerList.forEach { player ->
+        playerList.forEachIndexed { i, player ->
+
+            var playerNameColor = Color(0XFF2A0134)
+            var playerFont = FontWeight.SemiBold
+
+            if (i == (round-1) % 4) {
+                playerNameColor = Color(0xFF9D00FF)
+                playerFont = FontWeight.ExtraBold
+            }
             Box(
                 modifier = Modifier
                     .width(160.dp)
@@ -205,7 +222,11 @@ fun PlayersHeader(playerList: List<String>, scroll: ScrollState) {
                 contentAlignment = Alignment.Center
             ) {
                 // todo highlight player whose turn it is
-                Text(text = player, fontWeight = FontWeight.Bold)
+                Text(
+                    text = player,
+                    fontWeight = playerFont,
+                    color = playerNameColor
+                )
             }
         }
     }
@@ -241,29 +262,6 @@ fun ScoreCell(scoreMap: Map<String, Int>?, player: String) {
     }
 }
 
-@Composable
-fun TableHeaderCell(
-    text: String,
-    modifier: Modifier,
-    isPrimary: Boolean = false
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(1.dp, Color.Black)
-            .padding(4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            color = if (isPrimary) Color.Red else Color.DarkGray
-        )
-    }
-}
-
-//15 - 8
 
 // 1 1 1 1 2 3 4 5 6 7 8 8 8 8 7 6 5 4 3 2 1
 //  1 1 1 1 2 3 4 5 6 7 8 8

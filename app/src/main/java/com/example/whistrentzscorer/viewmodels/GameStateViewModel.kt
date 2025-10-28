@@ -1,6 +1,9 @@
 package com.example.whistrentzscorer.viewmodels
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -10,8 +13,9 @@ class GameStateViewModel @Inject constructor(
 ) : ViewModel() {
 
     fun init(players: List<String>) {
+        playerList = players
         // 2 rounds with 1 card + 1 round with 8 cards per player + the rest 2-7 cards (up and down)
-        totalRounds = players.size * 3 + 14
+        totalRounds = players.size * 3 + 12
         scorePerRound.clear()
         bets.clear()
         handsTaken.clear()
@@ -34,6 +38,13 @@ class GameStateViewModel @Inject constructor(
     }
 
 
+    fun getCurrentPlayer(): Int {
+       return (currentRound - 1) % 4
+    }
+
+    var currentRound: Int by mutableIntStateOf(1)
+
+    lateinit var playerList: List<String>
     var totalRounds: Int = 0
         private set
 

@@ -7,19 +7,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.whistrentzscorer.components.GameSetupScreen
 import com.example.whistrentzscorer.components.GamesHistory
 import com.example.whistrentzscorer.components.HomeScreen
 import com.example.whistrentzscorer.components.PlayersSetupScreen
+import com.example.whistrentzscorer.components.RoundActionScreen
 import com.example.whistrentzscorer.components.ScoreSheet
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
+import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import java.net.URLEncoder
 
 
 @Composable
@@ -31,6 +32,9 @@ fun AppNavigation(
 
     val sharedGameConfigViewModel: GameConfigViewModel = hiltViewModel(activity)
     val homeViewModel: HomeViewModel = hiltViewModel(activity)
+    val gameStateViewModel: GameStateViewModel = hiltViewModel(activity)
+
+
     val gameToResume by homeViewModel.gameToResume.collectAsState(initial = null)
 
     val onBack = {
@@ -38,8 +42,14 @@ fun AppNavigation(
             navController.popBackStack()
         }
     }
-    val goToHome = {
-        navController.navigate(Screen.Home.route)
+    val onScoreSheetBack = { currRound: Int ->
+        if (currRound > 1) {
+            navController.navigate(Screen.Home.route) {
+                popUpTo(0)
+            }
+        } else {
+            navController.popBackStack()
+        }
     }
 
     val onCreateGame = {
@@ -66,6 +76,12 @@ fun AppNavigation(
                 )
             )
         }
+    }
+
+    val onRoundAction = { action: String ->
+        navController.navigate(Screen.RoundAction.passArgs(
+            action
+        ))
     }
 
     NavHost(navController = navController, startDestination = Screen.Home.route) {
@@ -107,9 +123,25 @@ fun AppNavigation(
             ScoreSheet(
                 onBack = {
                     // auto save game here
-                    goToHome()
+                    onScoreSheetBack(gameStateViewModel.currentRound)
                 },
-                gameConfigViewModel = sharedGameConfigViewModel
+                  gameConfigViewModel = sharedGameConfigViewModel,
+
+                onBid = { onRoundAction("bid") },
+                onInputResults = { onRoundAction("results") }
+            )
+        }
+
+        composable(
+            route = Screen.RoundAction.route,
+            arguments = listOf(
+                navArgument("action") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val action = backStackEntry.arguments?.getString("action") ?: ""
+            RoundActionScreen(
+                action = action,
+                onBack = { onBack() }
             )
         }
 

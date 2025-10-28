@@ -1,20 +1,29 @@
 package com.example.whistrentzscorer.ui
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 
 
@@ -22,7 +31,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun WhistTopBar(
     title: @Composable () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isInGame: Boolean = false,
+    onBid: () -> Unit = {},
+    onInputResults: () -> Unit = {}
 ) {
     TopAppBar(
         navigationIcon = {
@@ -44,8 +56,39 @@ fun WhistTopBar(
             titleContentColor = MaterialTheme.colorScheme.onSurface
         ),
         title = title,
+        actions = {
+            if (isInGame) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Button(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onClick = { onBid() },
+                    ) {
+                        Text(
+                            text = "Bid",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
 
-        )
+                    Button(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onClick = { onInputResults() },
+                    ) {
+                        Text(
+                            text = "Input Results",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
+                }
+            }
+
+        }
+    )
 }
 
 
@@ -58,7 +101,7 @@ fun HomeTopBar(
         navigationIcon = {
             IconButton(
                 onClick = {}  // TODO
-            )  {
+            ) {
                 Icon(
                     Icons.Filled.Menu,
                     modifier = Modifier.padding(8.dp),
