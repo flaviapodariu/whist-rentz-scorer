@@ -37,7 +37,7 @@ val Bonus = listOf(0, 5, 10)
 
 @Composable
 fun PlayersSetupScreen(
-    onPlayersAdded: (Set<String>) -> Unit,
+    onPlayersAdded: (List<String>) -> Unit,
     onBack: () -> Unit,
     viewModel: GameConfigViewModel = hiltViewModel()
 ) {

@@ -56,42 +56,44 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Button(
+                HomeButton(
                     onClick = onCreateGame,
-                ) {
-                    Text(
-                        text = "New Game",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(top = 20.dp, bottom = 16.dp)
-                    )
-                }
+                    text = "New Game"
+                )
 
-                Button(
-                    onClick = onReviewHistory
-                ) {
-                    Text(
-                        text = "Games History",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(top = 20.dp, bottom = 16.dp)
-                    )
-                }
-            }
-
-            Button(
-                onClick = onResume,
-                enabled = gameToResume != null
-            ) {
-                Text(
-                    text = "Resume",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(top = 20.dp, bottom = 16.dp)
+                HomeButton(
+                    onClick = onReviewHistory,
+                    text = "Games History"
                 )
             }
+
+            HomeButton(
+                onClick = onResume,
+                text = "Resume",
+                enabled = gameToResume != null
+            )
         }
 
         Spacer(modifier = Modifier.weight(3f))
+    }
+}
+
+@Composable
+fun HomeButton(
+    onClick: ()-> Unit,
+    text: String,
+    enabled: Boolean = true,
+    weight: Float? = null
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            modifier = Modifier.padding(top = 20.dp, bottom = 16.dp)
+        )
     }
 }

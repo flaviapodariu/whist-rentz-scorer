@@ -2,6 +2,7 @@ package com.example.whistrentzscorer.viewmodels
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
@@ -20,7 +21,7 @@ class GameConfigViewModel @Inject constructor(
     var newPlayerName by mutableStateOf("")
         private set
 
-    val players = mutableStateSetOf<String>()
+    val players = mutableStateListOf<String>()
 
     var gameType by mutableStateOf("11..88..11")
         private set
@@ -46,8 +47,11 @@ class GameConfigViewModel @Inject constructor(
 
     fun addPlayer() {
         if (newPlayerName.isNotBlank() && players.size <= 6) {
-            players.add(newPlayerName)
-            newPlayerName = ""
+            val existentPlayers = players.toSet()
+            if (!existentPlayers.contains(newPlayerName)) {
+                players.add(newPlayerName)
+                newPlayerName = ""
+            }
         }
     }
 

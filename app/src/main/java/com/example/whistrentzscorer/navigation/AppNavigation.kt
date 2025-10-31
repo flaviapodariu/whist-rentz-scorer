@@ -21,6 +21,7 @@ import com.example.whistrentzscorer.components.ScoreSheet
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
+import com.example.whistrentzscorer.viewmodels.RoundActions
 
 
 @Composable
@@ -78,9 +79,9 @@ fun AppNavigation(
         }
     }
 
-    val onRoundAction = { action: String ->
+    val onRoundAction = { action: String, cards: Int ->
         navController.navigate(Screen.RoundAction.passArgs(
-            action
+            action, cards
         ))
     }
 
@@ -111,7 +112,9 @@ fun AppNavigation(
             route = Screen.GameSetup.route
         ) {
             GameSetupScreen(
-                onGameStarted = { onGameStarted() },
+                onGameStarted = {
+                    gameStateViewModel.init(sharedGameConfigViewModel.players)
+                    onGameStarted() },
                 onBack = { onBack() },
                 viewModel = sharedGameConfigViewModel
             )
@@ -127,21 +130,27 @@ fun AppNavigation(
                 },
                   gameConfigViewModel = sharedGameConfigViewModel,
 
-                onBid = { onRoundAction("bid") },
-                onInputResults = { onRoundAction("results") }
+                onBid = { onRoundAction(RoundActions.BID.name, gameStateViewModel.currentRoundCards) },
+                onInputResults = { onRoundAction(RoundActions.RESULTS.name, gameStateViewModel.currentRoundCards) },
+                gameStateViewModel = gameStateViewModel
             )
         }
 
         composable(
             route = Screen.RoundAction.route,
             arguments = listOf(
-                navArgument("action") { type = NavType.StringType }
+                navArgument("action") { type = NavType.StringType },
+                navArgument("cards") { type = NavType.IntType }
             )
         ) { backStackEntry ->
             val action = backStackEntry.arguments?.getString("action") ?: ""
+            val cards = backStackEntry.arguments?.getInt("cards") ?: 1
+
             RoundActionScreen(
+                cardsThisRound = cards,
                 action = action,
-                onBack = { onBack() }
+                onBack = { onBack() },
+                gameStateViewModel = gameStateViewModel
             )
         }
 

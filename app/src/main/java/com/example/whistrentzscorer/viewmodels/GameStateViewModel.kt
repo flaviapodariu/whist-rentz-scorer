@@ -3,61 +3,152 @@ package com.example.whistrentzscorer.viewmodels
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.math.abs
 
 @HiltViewModel
 class GameStateViewModel @Inject constructor(
 ) : ViewModel() {
 
+    var game by mutableStateOf(GameState())
+        private set
+
+    lateinit var playerList: List<String>
+        private set
+    var totalRounds: Int = 0
+        private set
+    var currentRound: Int by mutableIntStateOf(1)
+
+    var currentRoundCards: Int by mutableIntStateOf(1)
+
+    fun prepareNextRound(gameConfig: String) {
+        currentRound += 1
+        currentRoundCards = cardsThisRound(currentRound, gameConfig)
+    }
     fun init(players: List<String>) {
         playerList = players
         // 2 rounds with 1 card + 1 round with 8 cards per player + the rest 2-7 cards (up and down)
         totalRounds = players.size * 3 + 12
-        scorePerRound.clear()
-        bets.clear()
-        handsTaken.clear()
 
         for (round in 1 until totalRounds+1) {
-            players.forEach { p ->
-                val scoreMap = mutableMapOf<String, Int>()
-                val betMap = mutableMapOf<String, Int>()
-                val handsMap = mutableMapOf<String, Int>()
-
-                players.forEach { player ->
-                    scoreMap[player] = 0
-                }
-
-                scorePerRound[round] = scoreMap
-                bets[round] = betMap
-                handsTaken[round] = handsMap
-            }
+            game.state[round] = players.associateWith { RoundState() }.toMutableMap()
         }
     }
 
 
     fun getCurrentPlayer(): Int {
-       return (currentRound - 1) % 4
+       return (currentRound - 1) % playerList.size
     }
 
-    var currentRound: Int by mutableIntStateOf(1)
+    fun getGameState(): GameState = game
 
-    lateinit var playerList: List<String>
-    var totalRounds: Int = 0
-        private set
+    fun getRoundStateForPlayer(round: Int, playerIndex: Int): RoundState {
+        val player = playerList[playerIndex]
 
-    // round -> (player -> score)
-    var scorePerRound = mutableStateMapOf<Int, MutableMap<String, Int>>()
-        private set
+        return game.state[round]?.get(player)?: RoundState()
+    }
 
-    // round -> (player -> bet)
-    var bets = mutableStateMapOf<Int, MutableMap<String, Int>>()
-        private set
+    fun setBid(round: Int, playerIndex: Int, bid: Int) {
+        val player = playerList[playerIndex]
+        game.state[round]?.get(player)?.bid = bid
+    }
 
-    // round -> (player -> hands taken)
-    var handsTaken = mutableStateMapOf<Int, MutableMap<String, Int>>()
-        private set
+    fun setHandsTaken(round: Int, playerIndex: Int, hands: Int) {
+        val player = playerList[playerIndex]
+        game.state[round]?.get(player)?.handsTaken = hands
+    }
 
+    fun saveRoundScore(round: Int) {
+        playerList.forEach { player ->
+            val bid = game.state[round]?.get(player)?.bid?: 0
+            val handsTaken = game.state[round]?.get(player)?.handsTaken?: 0
+            val scoreLastRound = game.state[round - 1]?.get(player)?.score ?:0
+            game.state[round]?.get(player)?.score = scoreLastRound + whistScoring(bid, handsTaken)
+
+        }
+    }
+
+    fun undoLastTurn() {
+        if(currentRound > 1) {
+            currentRound -= 1
+            val state = game.state[currentRound]
+            state?.keys?.forEach { player ->
+                state[player] = RoundState()
+            }
+
+        }
+
+    }
+
+    fun cardsThisRound(
+        round: Int,
+        gameType: String,
+    ): Int {
+        val playerCount = playerList.size
+        val roundTypes = gameType.split("..")
+        // first character in 11 / 88 represents hand card number
+        val startingRound = Integer.parseInt(roundTypes[0][0].toString())
+        val midRound = Integer.parseInt(roundTypes[1][0].toString())
+
+        // start
+        if (round in 1..playerCount) return startingRound
+
+        // up
+        if (round in playerCount+1..playerCount + 6) {
+            if (startingRound == 1)
+                return round - playerCount + startingRound
+            if (startingRound == 8)
+                return startingRound - (round - playerCount)
+        }
+
+        // mid
+        val middleRoundsEnd = 2 * playerCount + 6
+        if (round in playerCount + 7..middleRoundsEnd) return midRound
+
+
+        // 15 -> 7  -8
+        // 16 -> 6  -10
+        // 17 -> 5   -12
+
+        // down
+        val startEndRounds = middleRoundsEnd + 6
+        if (round in middleRoundsEnd + 1..startEndRounds) {
+            if (startingRound == 1)
+                return middleRoundsEnd + midRound - round
+            if (startingRound == 8)
+                 return round - playerCount - startingRound - 1
+        }
+
+        if (round in startEndRounds + 1.. startEndRounds + playerCount) {
+            return startingRound
+        }
+        // startingRound can only be 1 or 8
+        return 0
+    }
+}
+
+data class GameState(
+    var state: MutableMap<Int, MutableMap<String, RoundState>> = mutableStateMapOf()
+)
+
+data class RoundState(
+    var score: Int? = null,
+    var bid: Int? = null,
+    var handsTaken: Int? = null
+)
+
+enum class RoundActions() {
+    BID,
+    RESULTS
+}
+
+fun whistScoring(bid: Int, handsTaken: Int): Int {
+    if (bid == handsTaken) {
+        return 5 + handsTaken
+    }
+    return -abs(bid - handsTaken)
 }
