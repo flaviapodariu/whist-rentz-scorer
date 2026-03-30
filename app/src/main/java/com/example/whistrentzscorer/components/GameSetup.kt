@@ -98,7 +98,7 @@ fun PlayersSetupScreen(
 
 @Composable
 fun GameSetupScreen(
-    onGameStarted: () -> Unit,
+    onGameStarted: (Long) -> Unit,
     onBack: () -> Unit,
     viewModel: GameConfigViewModel = hiltViewModel()
 ) {
@@ -115,8 +115,8 @@ fun GameSetupScreen(
             if (viewModel.players.size >= 3) {
                 FloatingActionButton(onClick = {
                     coroutineScope.launch {
-                        viewModel.createNewGame()
-                        onGameStarted()
+                        val gameId = viewModel.createNewGame()
+                        onGameStarted(gameId)
                     }
                 }) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = "Start Game")

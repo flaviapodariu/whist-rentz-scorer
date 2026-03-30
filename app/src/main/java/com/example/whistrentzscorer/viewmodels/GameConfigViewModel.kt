@@ -31,16 +31,19 @@ class GameConfigViewModel @Inject constructor(
 
     var zeroPointsWins by mutableStateOf(false)
 
+    var gameMode by mutableStateOf("whist")
+
    // business logic
 
-    suspend fun createNewGame() {
+    suspend fun createNewGame(): Long {
         val newGame = Game(
             timestamp = System.currentTimeMillis(),
             players = getPlayerList(),
             isFinished = false,
-            scoresJson = ""
+            scoresJson = "",
+            gameType = gameMode
         )
-        gameRepository.addGame(newGame)
+        return gameRepository.addGame(newGame)
     }
 
     fun getPlayerList(): List<String> = players.toList()

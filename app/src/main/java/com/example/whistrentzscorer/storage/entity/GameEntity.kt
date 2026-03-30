@@ -13,7 +13,8 @@ data class GameEntity (
     val timestamp: Long = System.currentTimeMillis(),
     val players: String,
     val isFinished: Boolean,
-    val scoresJson: String
+    val scoresJson: String,
+    val gameType: String = "whist"
 )
 
 fun GameEntity.toDomain(): Game {
@@ -24,6 +25,7 @@ fun GameEntity.toDomain(): Game {
         isFinished = isFinished,
         players = players.split(",")
             .map { it.trim() }
-            .filter { it.isNotBlank() }
+            .filter { it.isNotBlank() },
+        gameType = gameType
     )
 }

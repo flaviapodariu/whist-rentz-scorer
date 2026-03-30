@@ -1,6 +1,9 @@
 package com.example.whistrentzscorer.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -22,25 +26,37 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.Orange40
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundActions
 import com.example.whistrentzscorer.viewmodels.RoundState
+import kotlinx.coroutines.launch
 
 @Composable
 fun RoundActionScreen(
@@ -76,12 +92,40 @@ fun RoundActionScreen(
 
     val isLastPlayer = isLastPlayer(currentPlayer, playerCount, firstPlayer)
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                gameStateViewModel.autoSave()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     Scaffold(
         topBar = {
             WhistTopBar(
                 title = { Text(text = "") },
                 onBack = onBack
             )
+        },
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = Coral40,
+                    contentColor = Color.White,
+                    actionColor = Color.White,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
     ) { padding ->
         Column(
@@ -106,12 +150,16 @@ fun RoundActionScreen(
                             gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
                         }
                         currentPlayer = (currentPlayer - 1 + playerCount) % playerCount
-                        selectedValue =
-                            gameStateViewModel.getRoundStateForPlayer(
-                                round = round,
-                                playerIndex = currentPlayer
-                            ).bid
-                                ?: 0
+
+                        val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
+                            round = round,
+                            playerIndex = currentPlayer
+                        )
+                        selectedValue = if (action == RoundActions.BID.name) {
+                            newPlayerState.bid ?: 0
+                        } else {
+                            newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                        }
                         shouldAnimate = false
                     },
                     icon = Icons.Filled.ArrowBackIosNew,
@@ -135,12 +183,16 @@ fun RoundActionScreen(
                             gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
                         }
                         currentPlayer = (currentPlayer + 1) % playerCount
-                        selectedValue =
-                            gameStateViewModel.getRoundStateForPlayer(
-                                round = round,
-                                playerIndex = currentPlayer
-                            ).bid
-                                ?: 0
+
+                        val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
+                            round = round,
+                            playerIndex = currentPlayer
+                        )
+                        selectedValue = if (action == RoundActions.BID.name) {
+                            newPlayerState.bid ?: 0
+                        } else {
+                            newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                        }
                         shouldAnimate = false
                     },
                     icon = Icons.AutoMirrored.Filled.ArrowForwardIos,
@@ -164,15 +216,16 @@ fun RoundActionScreen(
             }
 
             var handsTakenSoFar = 0
+            var autoSelectedValue = 0
             if (action == RoundActions.RESULTS.name) {
                 handsTakenSoFar = handsTakenSoFar(
-                    cardsThisRound = cardsThisRound,
                     roundState = gameStateViewModel.game.state[round]!!,
+                    excludePlayer = gameStateViewModel.playerList[currentPlayer]
                 )
-                if (isLastPlayer) {
-                    selectedValue = handsTakenSoFar
-                }
+                autoSelectedValue = cardsThisRound - handsTakenSoFar
             }
+
+
 
 
             ValueChooser(
@@ -187,6 +240,7 @@ fun RoundActionScreen(
                 shouldAnimate = shouldAnimate,
                 illegalChoice = illegalChoice,
                 isLastPlayer = isLastPlayer,
+                autoSelectedValue = autoSelectedValue
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -206,8 +260,18 @@ fun RoundActionScreen(
                         }
 
                         if (action == RoundActions.RESULTS.name) {
+                            val totalHands = gameStateViewModel.game.state[round]!!
+                                .values.sumOf { it.handsTaken ?: 0 }
+                            if (totalHands != cardsThisRound) {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(
+                                        "Total hands taken ($totalHands) must equal cards dealt ($cardsThisRound)"
+                                    )
+                                }
+                                return@Button
+                            }
                             gameStateViewModel.saveRoundScore(round)
-                            gameStateViewModel.currentRound += 1
+                            gameStateViewModel.advanceRound()
                         }
                         onBack()
                     }
@@ -260,8 +324,12 @@ fun ValueChooser(
     handsTakenSoFar: Int,
     shouldAnimate: Boolean,
     illegalChoice: Int? = null,
-    isLastPlayer: Boolean
+    isLastPlayer: Boolean,
+    autoSelectedValue: Int = 0,
 ) {
+
+    val isBid = action == RoundActions.BID.name
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -271,10 +339,12 @@ fun ValueChooser(
     ) {
 
         for (value in 0..8) {
+            val isSelected = value == selectedValue
+
             val targetColor =
                 when {
                     value == illegalChoice -> Color.LightGray.copy(alpha = 0.5f)
-                    value == selectedValue -> Orange40
+                    isSelected -> Orange40
                     else -> ButtonDefaults.buttonColors().containerColor
                 }
 
@@ -286,6 +356,21 @@ fun ValueChooser(
 
             val selectedColor = if (shouldAnimate) animatedColor else targetColor
 
+            val scale by animateFloatAsState(
+                targetValue = if (isSelected) 1.2f else 1f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
+                ),
+                label = "ButtonScaleAnim"
+            )
+
+            val elevation by animateFloatAsState(
+                targetValue = if (isSelected) 8f else 0f,
+                animationSpec = tween(durationMillis = 300),
+                label = "ButtonElevationAnim"
+            )
+
             Button(
                 onClick = {
                     onSelected(value)
@@ -296,20 +381,36 @@ fun ValueChooser(
                     handsTakenSoFar = handsTakenSoFar,
                     illegalChoice = illegalChoice,
                     action = action,
-                    autoSelected = selectedValue,
+                    autoSelected = if (isBid) selectedValue else autoSelectedValue,
                     isLastPlayer = isLastPlayer
                 ),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(selectedColor),
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    }
+                    .shadow(
+                        elevation = elevation.dp,
+                        shape = RoundedCornerShape(8.dp),
+                        ambientColor = Orange40,
+                        spotColor = Orange40
+                    ),
             ) {
                 Box(
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier
+                        .widthIn(min = 32.dp)
+                        .size(32.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = value.toString(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        style = if (isSelected)
+                            MaterialTheme.typography.headlineMedium
+                        else
+                            MaterialTheme.typography.headlineSmall,
+                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold
                     )
 
                     if (value == illegalChoice) {
@@ -355,11 +456,12 @@ fun getIllegalChoice(
 }
 
 fun handsTakenSoFar(
-    cardsThisRound: Int,
-    roundState: MutableMap<String, RoundState>
+    roundState: MutableMap<String, RoundState>,
+    excludePlayer: String? = null
 ): Int {
-    val handsTaken = roundState.values.sumOf { state -> state.handsTaken ?: 0 }
-    return cardsThisRound - handsTaken
+    return roundState.entries
+        .filter { it.key != excludePlayer }
+        .sumOf { it.value.handsTaken ?: 0 }
 }
 
 fun enabledCondition(
@@ -371,11 +473,8 @@ fun enabledCondition(
     action: String,
     autoSelected: Int
 ): Boolean {
-    val remaining = cardsThisRound - handsTakenSoFar
     if (action == RoundActions.RESULTS.name) {
-        if (isLastPlayer)
-            return autoSelected == value
-        return value <= remaining
+        return value <= cardsThisRound
     }
 
     return value <= cardsThisRound && value != illegalChoice

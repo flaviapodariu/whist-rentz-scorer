@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,19 +21,29 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.DeepPurple
 import com.example.whistrentzscorer.ui.theme.Teal80
@@ -48,10 +59,10 @@ fun ScoreSheet(
     onBid: () -> Unit,
     onInputResults: () -> Unit
 ) {
-    val playerList = gameConfigViewModel.players
-    val gameType = gameConfigViewModel.gameType
+    val playerList = gameStateViewModel.playerList
+    val gameType = gameStateViewModel.gameType
 
-    val game = gameStateViewModel.game // game is a MutableState<GameState>, so changes to its value are tracked
+    val game = gameStateViewModel.game
 
     val gameState = game.state
 
@@ -66,7 +77,43 @@ fun ScoreSheet(
         }
     }
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                gameStateViewModel.autoSave()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
     val horizontalScrollState = rememberScrollState()
+
+    var showUndoConfirmation by remember { mutableStateOf(false) }
+
+    if (showUndoConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showUndoConfirmation = false },
+            title = { Text("Undo last round?") },
+            text = { Text("This will remove the bids and results for the last completed round.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    gameStateViewModel.undoLastTurn()
+                    showUndoConfirmation = false
+                }) {
+                    Text("Undo", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUndoConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -77,7 +124,7 @@ fun ScoreSheet(
                 onBid = onBid,
                 onInputResults = onInputResults,
                 undoLastTurn = {
-                    gameStateViewModel.undoLastTurn()
+                    showUndoConfirmation = true
                 }
             )
         }
@@ -127,7 +174,6 @@ fun ScoreSheet(
         }
     }
 
-
 }
 
 @Composable
@@ -141,7 +187,10 @@ fun ScoringCells(
         modifier = Modifier
     ) {
         // 0 based indexing
-        items(totalRounds) { round ->
+        items(totalRounds, key = { round ->
+            val roundData = gameState[round + 1]
+            "${round}_${System.identityHashCode(roundData)}"
+        }) { round ->
             Row(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -155,16 +204,22 @@ fun ScoringCells(
                     Text(text = roundHandSize(round+1).toString() )
                 }
                 playerList.forEach { player ->
+                    val playerState = gameState[round+1]?.get(player)
+                    val bid = playerState?.bid
+                    val handsTaken = playerState?.handsTaken
+                    val bidFailed = bid != null && handsTaken != null && bid != handsTaken
+
                     ScoreCell(
-                        score = gameState[round+1]?.get(player)?.bid,
+                        score = bid,
+                        width = 40.dp,
+                        showCross = bidFailed
+                    )
+                    ScoreCell(
+                        score = handsTaken,
                         width = 40.dp
                     )
                     ScoreCell(
-                        score = gameState[round+1]?.get(player)?.handsTaken,
-                        width = 40.dp
-                    )
-                    ScoreCell(
-                        score = gameState[round+1]?.get(player)?.score,
+                        score = playerState?.score,
                         width = 80.dp
                     )
                 }
@@ -221,7 +276,7 @@ fun PlayersHeader(playerList: List<String>, round: Int, scroll: ScrollState) {
 }
 
 @Composable
-fun ScoreCell(score: Int?, width: Dp) {
+fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false) {
     Box(
         modifier = Modifier
             .width(width)
@@ -231,6 +286,18 @@ fun ScoreCell(score: Int?, width: Dp) {
     ) {
         val displayScore = score?.toString() ?: ""
         Text(text = displayScore)
+
+        if (showCross) {
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val stroke = 2.dp.toPx()
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(size.width, 0f),
+                    end = Offset(0f, size.height),
+                    strokeWidth = stroke
+                )
+            }
+        }
     }
 }
 

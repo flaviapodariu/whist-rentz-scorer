@@ -2,6 +2,9 @@ package com.example.whistrentzscorer.storage
 
 import android.content.Context
 import com.example.whistrentzscorer.storage.dao.GameDao
+import com.example.whistrentzscorer.storage.repository.GameRepository
+import com.example.whistrentzscorer.storage.repository.IGameRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,4 +26,13 @@ object RoomModule {
     fun provideGameDao(database: AppDB): GameDao {
         return database.gameDao()
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+    
+    @Binds
+    @Singleton
+    abstract fun bindGameRepository(impl: GameRepository): IGameRepository
 }

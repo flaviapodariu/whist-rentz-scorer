@@ -54,6 +54,7 @@ fun AppNavigation(
     }
 
     val onCreateGame = {
+        sharedGameConfigViewModel.gameMode = homeViewModel.selectedGameMode.value
         navController.navigate(Screen.PlayersSetup.route)
     }
 
@@ -69,13 +70,15 @@ fun AppNavigation(
         navController.navigate(Screen.ScoreSheet.route)
     }
 
-    val onResume = { gameId: Int? ->
-        if (gameId != null) {
-            navController.navigate(
-                Screen.ScoreSheet.passArgs(
-                    gameId.toString()
-                )
+    val onResume = {
+        val savedGame = gameToResume
+        if (savedGame != null) {
+            gameStateViewModel.restoreGame(
+                id = savedGame.id,
+                players = savedGame.players,
+                scoresJson = savedGame.scoresJson
             )
+            navController.navigate(Screen.ScoreSheet.route)
         }
     }
 
@@ -94,7 +97,8 @@ fun AppNavigation(
                 modifier = modifier,
                 onCreateGame = { onCreateGame() },
                 onReviewHistory = { onReviewHistory() },
-                onResume = { onResume(gameToResume?.id) }
+                onResume = { onResume() },
+                viewModel = homeViewModel
             )
         }
 
@@ -112,8 +116,9 @@ fun AppNavigation(
             route = Screen.GameSetup.route
         ) {
             GameSetupScreen(
-                onGameStarted = {
-                    gameStateViewModel.init(sharedGameConfigViewModel.players)
+                onGameStarted = { gameId ->
+                    gameStateViewModel.init(sharedGameConfigViewModel.players, sharedGameConfigViewModel.gameType)
+                    gameStateViewModel.setGameId(gameId.toInt())
                     onGameStarted() },
                 onBack = { onBack() },
                 viewModel = sharedGameConfigViewModel
@@ -125,7 +130,7 @@ fun AppNavigation(
         ) {
             ScoreSheet(
                 onBack = {
-                    // auto save game here
+                    gameStateViewModel.autoSave()
                     onScoreSheetBack(gameStateViewModel.currentRound)
                 },
                   gameConfigViewModel = sharedGameConfigViewModel,
@@ -154,12 +159,21 @@ fun AppNavigation(
             )
         }
 
-        //todo
         composable(
             route = Screen.GamesHistory.route
         ) {
             GamesHistory(
                 onBack = { onBack() },
+                onGameClick = { game ->
+                    val players = game.players.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    gameStateViewModel.restoreGame(
+                        id = game.id,
+                        players = players,
+                        scoresJson = game.scoresJson
+                    )
+                    navController.navigate(Screen.ScoreSheet.route)
+                },
+                viewModel = homeViewModel
             )
         }
     }

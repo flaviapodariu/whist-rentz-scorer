@@ -9,7 +9,8 @@ data class Game(
     val timestamp: Long,
     val players: List<String>,
     val isFinished: Boolean,
-    val scoresJson: String
+    val scoresJson: String,
+    val gameType: String = "whist"
 )
 
 fun Game.toEntity(id: Int = 0): GameEntity {
@@ -19,5 +20,6 @@ fun Game.toEntity(id: Int = 0): GameEntity {
         players = players.joinToString(separator = ","),
         isFinished = isFinished,
         scoresJson = scoresJson,
+        gameType = gameType
     )
 }

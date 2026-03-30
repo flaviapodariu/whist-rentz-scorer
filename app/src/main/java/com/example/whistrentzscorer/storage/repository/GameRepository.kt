@@ -8,28 +8,47 @@ import com.example.whistrentzscorer.storage.entity.toDomain
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
+interface IGameRepository {
+    val allGames: Flow<List<GameEntity>>
+    fun allGamesByType(gameType: String): Flow<List<GameEntity>>
+    suspend fun addGame(game: Game): Long
+    suspend fun updateScore(gameId: Int, score: String)
+    suspend fun getGameById(gameId: Int): Game?
+    suspend fun getLastUnfinishedGame(): Game?
+    suspend fun getLastUnfinishedGameByType(gameType: String): Game?
+    suspend fun deleteGame(gameId: Int)
+}
+
 class GameRepository @Inject constructor(
     private val gameDao: GameDao
-) {
-    val allGames: Flow<List<GameEntity>> = gameDao.getAllGames()
+) : IGameRepository {
+    override val allGames: Flow<List<GameEntity>> = gameDao.getAllGames()
 
-    suspend fun addGame(game: Game): Long {
+    override fun allGamesByType(gameType: String): Flow<List<GameEntity>> {
+        return gameDao.getAllGamesByType(gameType)
+    }
+
+    override suspend fun addGame(game: Game): Long {
         return gameDao.insertGame(game.toEntity())
     }
 
-    suspend fun updateScore(gameId: Int, score: String) {
+    override suspend fun updateScore(gameId: Int, score: String) {
         return gameDao.updateScore(gameId, score)
     }
 
-    suspend fun getGameById(gameId: Int): Game? {
+    override suspend fun getGameById(gameId: Int): Game? {
         return gameDao.getGameById(gameId)?.toDomain()
     }
 
-    suspend fun getLastUnfinishedGame(): Game? {
+    override suspend fun getLastUnfinishedGame(): Game? {
         return gameDao.getLastUnfinishedGame()?.toDomain()
     }
 
-    suspend fun deleteGame(gameId: Int) {
+    override suspend fun getLastUnfinishedGameByType(gameType: String): Game? {
+        return gameDao.getLastUnfinishedGameByType(gameType)?.toDomain()
+    }
+
+    override suspend fun deleteGame(gameId: Int) {
         gameDao.deleteGame(gameId)
     }
 }

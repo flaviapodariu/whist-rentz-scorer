@@ -6,12 +6,18 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.whistrentzscorer.storage.repository.IGameRepository
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
 
 @HiltViewModel
 class GameStateViewModel @Inject constructor(
+    private val gameRepository: IGameRepository
 ) : ViewModel() {
 
     var game by mutableStateOf(GameState())
@@ -25,18 +31,34 @@ class GameStateViewModel @Inject constructor(
 
     var currentRoundCards: Int by mutableIntStateOf(1)
 
-    fun prepareNextRound(gameConfig: String) {
-        currentRound += 1
-        currentRoundCards = cardsThisRound(currentRound, gameConfig)
+    var gameType: String = "11..88..11"
+        private set
+
+    var gameId: Int = 0
+        private set
+
+    private val gson = Gson()
+
+    private fun updateCurrentRoundCards() {
+        currentRoundCards = cardsThisRound(currentRound, gameType)
     }
-    fun init(players: List<String>) {
+
+    fun advanceRound() {
+        currentRound += 1
+        updateCurrentRoundCards()
+        autoSave()
+    }
+
+    fun init(players: List<String>, gameType: String = "11..88..11") {
         playerList = players
+        this.gameType = gameType
         // 2 rounds with 1 card + 1 round with 8 cards per player + the rest 2-7 cards (up and down)
         totalRounds = players.size * 3 + 12
 
         for (round in 1 until totalRounds+1) {
             game.state[round] = players.associateWith { RoundState() }.toMutableMap()
         }
+        updateCurrentRoundCards()
     }
 
 
@@ -73,15 +95,85 @@ class GameStateViewModel @Inject constructor(
     }
 
     fun undoLastTurn() {
-        if(currentRound > 1) {
-            currentRound -= 1
-            val state = game.state[currentRound]
-            state?.keys?.forEach { player ->
-                state[player] = RoundState()
-            }
+        if (currentRound <= 1) return
 
+        val currentRoundHasResults = game.state[currentRound]?.values
+            ?.any { it.score != null } == true
+
+        if (currentRoundHasResults) {
+            // Current round is fully completed — clear it
+            clearRound(currentRound)
+        } else {
+            // Current round only has bids (or nothing) — clear it and go back one round
+            clearRound(currentRound)
+            currentRound -= 1
+            clearRound(currentRound)
+        }
+        updateCurrentRoundCards()
+        autoSave()
+    }
+
+    private fun clearRound(round: Int) {
+        val state = game.state[round] ?: return
+        game.state[round] = state.keys.associateWith { RoundState() }.toMutableMap()
+    }
+
+    fun setGameId(id: Int) {
+        gameId = id
+    }
+
+    fun autoSave() {
+        if (gameId == 0) return
+        viewModelScope.launch {
+            val saveData = SaveData(
+                currentRound = currentRound,
+                gameType = gameType,
+                state = game.state.mapKeys { (k, _) -> k.toString() }.mapValues { (_, playerMap) ->
+                    playerMap.mapValues { (_, rs) ->
+                        SerializableRoundState(rs.bid, rs.handsTaken, rs.score)
+                    }
+                }
+            )
+            val json = gson.toJson(saveData)
+            gameRepository.updateScore(gameId, json)
+        }
+    }
+
+    fun restoreGame(id: Int, players: List<String>, scoresJson: String) {
+        gameId = id
+        
+        // If no saved state, initialize a fresh game
+        if (scoresJson.isBlank()) {
+            init(players)
+            return
         }
 
+        try {
+            val type = object : TypeToken<SaveData>() {}.type
+            val saveData: SaveData = gson.fromJson(scoresJson, type)
+
+            playerList = players
+            gameType = saveData.gameType
+            currentRound = saveData.currentRound
+            totalRounds = players.size * 3 + 12
+
+            game = GameState()
+            val stateByInt = saveData.state.mapKeys { (k, _) -> k.toInt() }
+            for (round in 1..totalRounds) {
+                val savedRound = stateByInt[round]
+                if (savedRound != null) {
+                    game.state[round] = savedRound.mapValues { (_, srs) ->
+                        RoundState(bid = srs.bid, handsTaken = srs.handsTaken, score = srs.score)
+                    }.toMutableMap()
+                } else {
+                    game.state[round] = players.associateWith { RoundState() }.toMutableMap()
+                }
+            }
+            updateCurrentRoundCards()
+        } catch (e: Exception) {
+            // If parsing fails, initialize a fresh game
+            init(players)
+        }
     }
 
     fun cardsThisRound(
@@ -152,3 +244,15 @@ fun whistScoring(bid: Int, handsTaken: Int): Int {
     }
     return -abs(bid - handsTaken)
 }
+
+data class SerializableRoundState(
+    val bid: Int? = null,
+    val handsTaken: Int? = null,
+    val score: Int? = null
+)
+
+data class SaveData(
+    val currentRound: Int,
+    val gameType: String,
+    val state: Map<String, Map<String, SerializableRoundState>>
+)
