@@ -215,19 +215,6 @@ fun RoundActionScreen(
                     selectedValue else nextLegalChoice
             }
 
-            var handsTakenSoFar = 0
-            var autoSelectedValue = 0
-            if (action == RoundActions.RESULTS.name) {
-                handsTakenSoFar = handsTakenSoFar(
-                    roundState = gameStateViewModel.game.state[round]!!,
-                    excludePlayer = gameStateViewModel.playerList[currentPlayer]
-                )
-                autoSelectedValue = cardsThisRound - handsTakenSoFar
-            }
-
-
-
-
             ValueChooser(
                 action = action,
                 selectedValue = selectedValue,
@@ -236,11 +223,8 @@ fun RoundActionScreen(
                     shouldAnimate = true
                 },
                 cardsThisRound = cardsThisRound,
-                handsTakenSoFar = handsTakenSoFar,
                 shouldAnimate = shouldAnimate,
                 illegalChoice = illegalChoice,
-                isLastPlayer = isLastPlayer,
-                autoSelectedValue = autoSelectedValue
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -252,14 +236,12 @@ fun RoundActionScreen(
                         .weight(3f)
                         .padding(bottom = 32.dp),
                     onClick = {
-                        // save for last player
                         if (action == RoundActions.BID.name) {
                             gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                        } else {
-                            gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
                         }
 
                         if (action == RoundActions.RESULTS.name) {
+                            gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
                             val totalHands = gameStateViewModel.game.state[round]!!
                                 .values.sumOf { it.handsTaken ?: 0 }
                             if (totalHands != cardsThisRound) {
@@ -268,7 +250,7 @@ fun RoundActionScreen(
                                         "Total hands taken ($totalHands) must equal cards dealt ($cardsThisRound)"
                                     )
                                 }
-                                return@Button
+                                return@Button // returns early from onclick, and exec control is back to the Button
                             }
                             gameStateViewModel.saveRoundScore(round)
                             gameStateViewModel.advanceRound()
@@ -321,14 +303,10 @@ fun ValueChooser(
     selectedValue: Int,
     onSelected: (Int) -> Unit,
     cardsThisRound: Int,
-    handsTakenSoFar: Int,
     shouldAnimate: Boolean,
     illegalChoice: Int? = null,
-    isLastPlayer: Boolean,
-    autoSelectedValue: Int = 0,
 ) {
 
-    val isBid = action == RoundActions.BID.name
 
     Row(
         modifier = Modifier
@@ -378,11 +356,8 @@ fun ValueChooser(
                 enabled = enabledCondition(
                     value = value,
                     cardsThisRound = cardsThisRound,
-                    handsTakenSoFar = handsTakenSoFar,
                     illegalChoice = illegalChoice,
                     action = action,
-                    autoSelected = if (isBid) selectedValue else autoSelectedValue,
-                    isLastPlayer = isLastPlayer
                 ),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(selectedColor),
@@ -465,13 +440,10 @@ fun handsTakenSoFar(
 }
 
 fun enabledCondition(
-    isLastPlayer: Boolean,
     value: Int,
     cardsThisRound: Int,
-    handsTakenSoFar: Int,
     illegalChoice: Int?,
     action: String,
-    autoSelected: Int
 ): Boolean {
     if (action == RoundActions.RESULTS.name) {
         return value <= cardsThisRound

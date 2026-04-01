@@ -105,13 +105,10 @@ class BiddingLogicTest {
         // 3 cards in hand — buttons 4..8 should be disabled
         for (value in 4..8) {
             val enabled = enabledCondition(
-                isLastPlayer = false,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 0,
                 illegalChoice = null,
                 action = RoundActions.BID.name,
-                autoSelected = 0
             )
             assertFalse("Bid $value should be disabled with 3 cards", enabled)
         }
@@ -121,13 +118,10 @@ class BiddingLogicTest {
     fun `bid buttons within range are enabled`() {
         for (value in 0..3) {
             val enabled = enabledCondition(
-                isLastPlayer = false,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 0,
                 illegalChoice = null,
                 action = RoundActions.BID.name,
-                autoSelected = 0
             )
             assertTrue("Bid $value should be enabled with 3 cards", enabled)
         }
@@ -136,13 +130,10 @@ class BiddingLogicTest {
     @Test
     fun `illegal choice button is disabled for last player bid`() {
         val enabled = enabledCondition(
-            isLastPlayer = true,
             value = 2,
             cardsThisRound = 3,
-            handsTakenSoFar = 0,
             illegalChoice = 2,
             action = RoundActions.BID.name,
-            autoSelected = 0
         )
         assertFalse("Illegal choice 2 should be disabled", enabled)
     }
@@ -152,13 +143,10 @@ class BiddingLogicTest {
         // illegalChoice = 2, so 0, 1, 3 should be enabled
         for (value in listOf(0, 1, 3)) {
             val enabled = enabledCondition(
-                isLastPlayer = true,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 0,
                 illegalChoice = 2,
                 action = RoundActions.BID.name,
-                autoSelected = 0
             )
             assertTrue("Bid $value should be enabled (illegal is 2)", enabled)
         }
@@ -168,13 +156,10 @@ class BiddingLogicTest {
     fun `bid of max cards is allowed when not illegal`() {
         // 2 cards, last player, illegal = 1 → bid 2 should be enabled
         val enabled = enabledCondition(
-            isLastPlayer = true,
             value = 2,
             cardsThisRound = 2,
-            handsTakenSoFar = 0,
             illegalChoice = 1,
             action = RoundActions.BID.name,
-            autoSelected = 0
         )
         assertTrue("Bid 2 should be enabled with 2 cards and illegal=1", enabled)
     }
@@ -185,13 +170,10 @@ class BiddingLogicTest {
     fun `results buttons within range are all enabled for non-last player`() {
         for (value in 0..3) {
             val enabled = enabledCondition(
-                isLastPlayer = false,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 0,
                 illegalChoice = null,
                 action = RoundActions.RESULTS.name,
-                autoSelected = 0
             )
             assertTrue("Result $value should be enabled with 3 cards", enabled)
         }
@@ -201,13 +183,10 @@ class BiddingLogicTest {
     fun `results buttons above cardsThisRound are disabled`() {
         for (value in 4..8) {
             val enabled = enabledCondition(
-                isLastPlayer = false,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 0,
                 illegalChoice = null,
                 action = RoundActions.RESULTS.name,
-                autoSelected = 0
             )
             assertFalse("Result $value should be disabled with 3 cards", enabled)
         }
@@ -218,13 +197,10 @@ class BiddingLogicTest {
         // Last player should also have all values 0..cardsThisRound enabled
         for (value in 0..3) {
             val enabled = enabledCondition(
-                isLastPlayer = true,
                 value = value,
                 cardsThisRound = 3,
-                handsTakenSoFar = 1,
                 illegalChoice = null,
                 action = RoundActions.RESULTS.name,
-                autoSelected = 2
             )
             assertTrue("Result $value should be enabled for last player with 3 cards", enabled)
         }

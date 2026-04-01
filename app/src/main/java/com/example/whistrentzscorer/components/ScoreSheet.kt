@@ -47,24 +47,18 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.DeepPurple
 import com.example.whistrentzscorer.ui.theme.Teal80
-import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundState
 
 @Composable
 fun ScoreSheet(
     onBack: () -> Unit,
-    gameConfigViewModel: GameConfigViewModel,
-    gameStateViewModel: GameStateViewModel,
+    stateVM: GameStateViewModel,
     onBid: () -> Unit,
-    onInputResults: () -> Unit
+    onInputResults: () -> Unit,
+    isRentz: Boolean = false,
+    onSelectMiniGame: () -> Unit = {}
 ) {
-    val playerList = gameStateViewModel.playerList
-    val gameType = gameStateViewModel.gameType
-
-    val game = gameStateViewModel.game
-
-    val gameState = game.state
 
     val context = LocalContext.current
     val activity = context.findActivity()
@@ -81,7 +75,7 @@ fun ScoreSheet(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                gameStateViewModel.autoSave()
+                stateVM.autoSave()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -101,7 +95,7 @@ fun ScoreSheet(
             text = { Text("This will remove the bids and results for the last completed round.") },
             confirmButton = {
                 TextButton(onClick = {
-                    gameStateViewModel.undoLastTurn()
+                    stateVM.undoLastTurn()
                     showUndoConfirmation = false
                 }) {
                     Text("Undo", fontWeight = FontWeight.Bold)
@@ -121,15 +115,17 @@ fun ScoreSheet(
                 title = { Text(text = "") },
                 onBack = onBack,
                 isInGame = true,
+                isRentz = isRentz,
                 onBid = onBid,
                 onInputResults = onInputResults,
+                onSelectMiniGame = onSelectMiniGame,
                 undoLastTurn = {
                     showUndoConfirmation = true
                 }
             )
         }
     ) { padding ->
-        if (playerList.isNotEmpty()) {
+        if (stateVM.playerList.isNotEmpty()) {
             Column(
                 modifier = Modifier
                     .padding(padding)
@@ -149,20 +145,21 @@ fun ScoreSheet(
                         verticalArrangement = Arrangement.Top
                     ) {
 
-                        PlayersHeader(playerList, gameStateViewModel.currentRound, horizontalScrollState)
+                        PlayersHeader(stateVM.playerList, stateVM.currentRound, horizontalScrollState)
 
                         Box(
                             modifier = Modifier
                                 .horizontalScroll(horizontalScrollState)
                         ) {
                             ScoringCells(
-                                totalRounds = gameStateViewModel.totalRounds,
-                                playerList = playerList,
-                                gameState = gameState,
+                                totalRounds = stateVM.totalRounds,
+                                playerList = stateVM.playerList,
+                                gameState = stateVM.game.state,
                                 roundHandSize = { round ->
-                                    gameStateViewModel.cardsThisRound(
+                                    stateVM.cardsThisRound(
                                         round = round,
-                                        gameType
+                                        stateVM.gameType,
+                                        playerCount = stateVM.playerList.size
                                     )
                                 }
                             )

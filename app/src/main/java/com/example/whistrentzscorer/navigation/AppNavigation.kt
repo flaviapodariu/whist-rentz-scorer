@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -12,12 +13,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.whistrentzscorer.components.CountPerPlayerScreen
 import com.example.whistrentzscorer.components.GameSetupScreen
 import com.example.whistrentzscorer.components.GamesHistory
 import com.example.whistrentzscorer.components.HomeScreen
+import com.example.whistrentzscorer.components.MiniGameSelectionScreen
 import com.example.whistrentzscorer.components.PlayersSetupScreen
+import com.example.whistrentzscorer.components.RentzRankScreen
+import com.example.whistrentzscorer.components.RentzWhistScreen
 import com.example.whistrentzscorer.components.RoundActionScreen
 import com.example.whistrentzscorer.components.ScoreSheet
+import com.example.whistrentzscorer.components.SinglePlayerCheckboxScreen
+import com.example.whistrentzscorer.components.TotaleScreen
+import com.example.whistrentzscorer.objects.RentzInputType
+import com.example.whistrentzscorer.objects.RentzMiniGame
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
@@ -34,6 +43,7 @@ fun AppNavigation(
     val sharedGameConfigViewModel: GameConfigViewModel = hiltViewModel(activity)
     val homeViewModel: HomeViewModel = hiltViewModel(activity)
     val gameStateViewModel: GameStateViewModel = hiltViewModel(activity)
+    val coroutineScope = rememberCoroutineScope()
 
 
     val gameToResume by homeViewModel.gameToResume.collectAsState(initial = null)
@@ -88,6 +98,21 @@ fun AppNavigation(
         ))
     }
 
+    val onSelectMiniGame = {
+        navController.navigate(Screen.MiniGameSelection.route)
+    }
+
+    val onMiniGameSelected = { miniGame: RentzMiniGame ->
+        gameStateViewModel.selectMiniGame(miniGame)
+        navController.navigate(Screen.RentzResult.passArgs(miniGame.name))
+    }
+
+    val onRentzResultSubmit = { scores: Map<String, Int> ->
+        gameStateViewModel.submitRentzRoundScores(scores)
+        // Pop back to ScoreSheet
+        navController.popBackStack(Screen.ScoreSheet.route, inclusive = false)
+    }
+
     NavHost(navController = navController, startDestination = Screen.Home.route) {
 
         composable(
@@ -117,7 +142,11 @@ fun AppNavigation(
         ) {
             GameSetupScreen(
                 onGameStarted = { gameId ->
-                    gameStateViewModel.init(sharedGameConfigViewModel.players, sharedGameConfigViewModel.gameType)
+                    gameStateViewModel.init(
+                        sharedGameConfigViewModel.players,
+                        sharedGameConfigViewModel.gameType,
+                        sharedGameConfigViewModel.gameMode
+                    )
                     gameStateViewModel.setGameId(gameId.toInt())
                     onGameStarted() },
                 onBack = { onBack() },
@@ -133,11 +162,11 @@ fun AppNavigation(
                     gameStateViewModel.autoSave()
                     onScoreSheetBack(gameStateViewModel.currentRound)
                 },
-                  gameConfigViewModel = sharedGameConfigViewModel,
-
                 onBid = { onRoundAction(RoundActions.BID.name, gameStateViewModel.currentRoundCards) },
                 onInputResults = { onRoundAction(RoundActions.RESULTS.name, gameStateViewModel.currentRoundCards) },
-                gameStateViewModel = gameStateViewModel
+                stateVM = gameStateViewModel,
+                isRentz = gameStateViewModel.isRentzGame(),
+                onSelectMiniGame = { onSelectMiniGame() }
             )
         }
 
@@ -157,6 +186,69 @@ fun AppNavigation(
                 onBack = { onBack() },
                 gameStateViewModel = gameStateViewModel
             )
+        }
+
+        composable(
+            route = Screen.MiniGameSelection.route
+        ) {
+            MiniGameSelectionScreen(
+                onMiniGameSelected = { miniGame -> onMiniGameSelected(miniGame) },
+                onBack = { onBack() },
+                playedGames = gameStateViewModel.playedMiniGames.toSet()
+            )
+        }
+
+        composable(
+            route = Screen.RentzResult.route,
+            arguments = listOf(
+                navArgument("miniGame") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val miniGameName = backStackEntry.arguments?.getString("miniGame") ?: ""
+            val miniGame = try { RentzMiniGame.valueOf(miniGameName) } catch (e: Exception) { null }
+            val players = gameStateViewModel.playerList
+
+            if (miniGame != null) {
+                when (miniGame.inputType) {
+                    RentzInputType.SINGLE_PLAYER_CHECKBOX -> {
+                        SinglePlayerCheckboxScreen(
+                            miniGame = miniGame,
+                            players = players,
+                            onSubmit = { scores -> onRentzResultSubmit(scores) },
+                            onBack = { onBack() }
+                        )
+                    }
+                    RentzInputType.COUNT_PER_PLAYER -> {
+                        CountPerPlayerScreen(
+                            miniGame = miniGame,
+                            players = players,
+                            onSubmit = { scores -> onRentzResultSubmit(scores) },
+                            onBack = { onBack() }
+                        )
+                    }
+                    RentzInputType.WHIST -> {
+                        RentzWhistScreen(
+                            players = players,
+                            onSubmit = { scores -> onRentzResultSubmit(scores) },
+                            onBack = { onBack() }
+                        )
+                    }
+                    RentzInputType.RENTZ -> {
+                        RentzRankScreen(
+                            players = players,
+                            onSubmit = { scores -> onRentzResultSubmit(scores) },
+                            onBack = { onBack() }
+                        )
+                    }
+                    RentzInputType.TOTALE -> {
+                        TotaleScreen(
+                            players = players,
+                            onSubmit = { scores -> onRentzResultSubmit(scores) },
+                            onBack = { onBack() }
+                        )
+                    }
+                }
+            }
         }
 
         composable(

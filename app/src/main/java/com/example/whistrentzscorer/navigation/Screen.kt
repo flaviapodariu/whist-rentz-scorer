@@ -16,4 +16,8 @@ sealed class Screen(val route: String) {
     data object ScoreSheet : Screen("scoresheet") {
         fun passArgs(gameId: String) = "scoresheet/$gameId"
     }
+    data object MiniGameSelection : Screen("miniGameSelection")
+    data object RentzResult : Screen("rentzResult/{miniGame}") {
+        fun passArgs(miniGame: String) = "rentzResult/$miniGame"
+    }
 }

@@ -37,8 +37,10 @@ fun WhistTopBar(
     title: @Composable () -> Unit,
     onBack: () -> Unit,
     isInGame: Boolean = false,
+    isRentz: Boolean = false,
     onBid: () -> Unit = {},
     onInputResults: () -> Unit = {},
+    onSelectMiniGame: () -> Unit = {},
     undoLastTurn: () -> Unit = {},
 ) {
     TopAppBar(
@@ -67,33 +69,48 @@ fun WhistTopBar(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Spacer(modifier = Modifier.weight(0.85f))
-                    Button(
-                        modifier = Modifier.padding(horizontal = 16.dp)
-                            .weight(1f),
-                        onClick = { onBid() },
-                    ) {
-                        Text(
-                            text = "Bid",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(0.5f))
+                    if (isRentz) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        Button(
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                                .weight(2f),
+                            onClick = { onSelectMiniGame() },
+                        ) {
+                            Text(
+                                text = "Select Mini Game",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                    } else {
+                        Spacer(modifier = Modifier.weight(0.85f))
+                        Button(
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                                .weight(1f),
+                            onClick = { onBid() },
+                        ) {
+                            Text(
+                                text = "Bid",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(0.5f))
 
-                    Button(
-                        modifier = Modifier.padding(horizontal = 6.dp)
-                            .weight(1f),
-                        onClick = { onInputResults() },
-                    ) {
-                        Text(
-                            text = "Input Results",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
+                        Button(
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                                .weight(1f),
+                            onClick = { onInputResults() },
+                        ) {
+                            Text(
+                                text = "Input Results",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(0.85f))
                     }
-                    Spacer(modifier = Modifier.weight(0.85f))
-
                 }
             } else title
         },

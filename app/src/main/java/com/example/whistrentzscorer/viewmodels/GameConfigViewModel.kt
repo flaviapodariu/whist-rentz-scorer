@@ -17,10 +17,6 @@ class GameConfigViewModel @Inject constructor(
     private val gameRepository: GameRepository
 ) : ViewModel() {
 
-    // mutable state vars
-    var newPlayerName by mutableStateOf("")
-        private set
-
     val players = mutableStateListOf<String>()
 
     var gameType by mutableStateOf("11..88..11")
@@ -33,7 +29,6 @@ class GameConfigViewModel @Inject constructor(
 
     var gameMode by mutableStateOf("whist")
 
-   // business logic
 
     suspend fun createNewGame(): Long {
         val newGame = Game(
@@ -46,24 +41,31 @@ class GameConfigViewModel @Inject constructor(
         return gameRepository.addGame(newGame)
     }
 
+    var currentPlayerIndex by mutableIntStateOf(0)
+        private set
+
     fun getPlayerList(): List<String> = players.toList()
 
-    fun addPlayer() {
-        if (newPlayerName.isNotBlank() && players.size <= 6) {
-            val existentPlayers = players.toSet()
-            if (!existentPlayers.contains(newPlayerName)) {
-                players.add(newPlayerName)
-                newPlayerName = ""
-            }
+    fun setPlayerName(index: Int, name: String) {
+        if (index < players.size) {
+            players[index] = name
+        } else if (index == players.size) {
+            players.add(name)
         }
     }
 
-    fun removePlayer(player: String) {
-        players.remove(player)
+    fun getPlayerName(index: Int): String {
+        return if (index < players.size) players[index] else ""
     }
 
-    fun onNewPlayerNameSelected(name: String) {
-        newPlayerName = name
+    fun goToNextPlayer() {
+        currentPlayerIndex++
+    }
+
+    fun goToPrevPlayer() {
+        if (currentPlayerIndex > 0) {
+            currentPlayerIndex--
+        }
     }
 
     fun onGameTypeSelected(newGameType: String) {

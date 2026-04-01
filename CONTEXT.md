@@ -20,16 +20,16 @@ Whist (specifically the Romanian/Nomination variant) and Rentz (a multi-round "c
 ### 2. Rentz (The Compilation)
 A match consists of 8 sub-games called by each player. Once a player "calls" a game, they cannot call it again.
 
-| Sub-Game | Point Value / Rules | Total Points |
-| :--- | :--- | :--- |
-| **King of Hearts** | $K\heartsuit = -200$ points | -200 |
-| **Queens (Dame)** | -40 points per Queen | -160 |
+| Sub-Game            | Point Value / Rules | Total Points |
+|:--------------------| :--- | :--- |
+| **King of Hearts**  | $K\heartsuit = -200$ points | -200 |
+| **Queens (Dame)**   | -40 points per Queen | -160 |
 | **Diamonds (Caro)** | -30 points per card | -390 |
 | **Tricks (Levata)** | -50 points per trick taken | -650 |
-| **Totale** | Combined: $K\heartsuit$ + Queens + Diamonds + Tricks | -1,400 |
-| **10 of Clubs** | $10\clubsuit = +200$ points | +200 |
-| **Whist** | +50 points per trick taken | +650 |
-| **Rentz (The Race)** | 1st: +400, 2nd: +200, 3rd: +100, 4th: 0 | +700 |
+| **Totale**          | Combined: $K\heartsuit$ + Queens + Diamonds + Tricks | -1,400 |
+| **10 of Clubs**     | $10\clubsuit = +200$ points | +200 |
+| **Whist**           | +50 points per trick taken | +650 |
+| **Rentz**           | 1st: +400, 2nd: +200, 3rd: +100, 4th: 0 | +700 |
 ---
 
 ## 🏗️ Technical Architecture Constraints

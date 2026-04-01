@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.whistrentzscorer.objects.RentzMiniGame
 import com.example.whistrentzscorer.storage.repository.IGameRepository
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -37,10 +38,37 @@ class GameStateViewModel @Inject constructor(
     var gameId: Int = 0
         private set
 
+    var gameMode: String by mutableStateOf("whist")
+        private set
+
+    var selectedMiniGame: RentzMiniGame? by mutableStateOf(null)
+        private set
+
+    val playedMiniGames = mutableSetOf<RentzMiniGame>()
+
+    // Rentz cumulative scores per player
+    val rentzScores = mutableStateMapOf<String, Int>()
+
     private val gson = Gson()
 
+    fun selectMiniGame(miniGame: RentzMiniGame) {
+        selectedMiniGame = miniGame
+    }
+
+    fun submitRentzRoundScores(roundScores: Map<String, Int>) {
+        val miniGame = selectedMiniGame ?: return
+        roundScores.forEach { (player, score) ->
+            rentzScores[player] = (rentzScores[player] ?: 0) + score
+        }
+        playedMiniGames.add(miniGame)
+        selectedMiniGame = null
+        autoSave()
+    }
+
+    fun isRentzGame(): Boolean = gameMode == "rentz"
+
     private fun updateCurrentRoundCards() {
-        currentRoundCards = cardsThisRound(currentRound, gameType)
+        currentRoundCards = cardsThisRound(currentRound, gameType, playerList.size)
     }
 
     fun advanceRound() {
@@ -49,16 +77,26 @@ class GameStateViewModel @Inject constructor(
         autoSave()
     }
 
-    fun init(players: List<String>, gameType: String = "11..88..11") {
+    fun init(players: List<String>, gameType: String = "11..88..11", gameMode: String = "whist") {
         playerList = players
         this.gameType = gameType
-        // 2 rounds with 1 card + 1 round with 8 cards per player + the rest 2-7 cards (up and down)
-        totalRounds = players.size * 3 + 12
+        this.gameMode = gameMode
 
-        for (round in 1 until totalRounds+1) {
-            game.state[round] = players.associateWith { RoundState() }.toMutableMap()
+        if (gameMode == "rentz") {
+            // Rentz has 8 sub-games per player who calls
+            totalRounds = 0
+            rentzScores.clear()
+            playedMiniGames.clear()
+            players.forEach { rentzScores[it] = 0 }
+        } else {
+            // 2 rounds with 1 card + 1 round with 8 cards per player + the rest 2-7 cards (up and down)
+            totalRounds = players.size * 3 + 12
+
+            for (round in 1 until totalRounds + 1) {
+                game.state[round] = players.associateWith { RoundState() }.toMutableMap()
+            }
+            updateCurrentRoundCards()
         }
-        updateCurrentRoundCards()
     }
 
 
@@ -101,10 +139,8 @@ class GameStateViewModel @Inject constructor(
             ?.any { it.score != null } == true
 
         if (currentRoundHasResults) {
-            // Current round is fully completed — clear it
             clearRound(currentRound)
         } else {
-            // Current round only has bids (or nothing) — clear it and go back one round
             clearRound(currentRound)
             currentRound -= 1
             clearRound(currentRound)
@@ -176,50 +212,23 @@ class GameStateViewModel @Inject constructor(
         }
     }
 
-    fun cardsThisRound(
-        round: Int,
-        gameType: String,
-    ): Int {
-        val playerCount = playerList.size
-        val roundTypes = gameType.split("..")
-        // first character in 11 / 88 represents hand card number
-        val startingRound = Integer.parseInt(roundTypes[0][0].toString())
-        val midRound = Integer.parseInt(roundTypes[1][0].toString())
+    fun cardsThisRound(round: Int, gameType: String, playerCount: Int): Int {
+        val parts = gameType.split("..")
+        val start = parts[0][0].digitToInt() // 1 or 8
+        val mid = parts[1][0].digitToInt()   // 8 or 1
 
-        // start
-        if (round in 1..playerCount) return startingRound
+        val ramp = if (start < mid) (start + 1 until mid).toList()
+                   else (start - 1 downTo mid + 1).toList()
 
-        // up
-        if (round in playerCount+1..playerCount + 6) {
-            if (startingRound == 1)
-                return round - playerCount + startingRound
-            if (startingRound == 8)
-                return startingRound - (round - playerCount)
+        val sequence = buildList {
+            repeat(playerCount) { add(start) }
+            addAll(ramp)
+            repeat(playerCount) { add(mid) }
+            addAll(ramp.reversed())
+            repeat(playerCount) { add(start) }
         }
 
-        // mid
-        val middleRoundsEnd = 2 * playerCount + 6
-        if (round in playerCount + 7..middleRoundsEnd) return midRound
-
-
-        // 15 -> 7  -8
-        // 16 -> 6  -10
-        // 17 -> 5   -12
-
-        // down
-        val startEndRounds = middleRoundsEnd + 6
-        if (round in middleRoundsEnd + 1..startEndRounds) {
-            if (startingRound == 1)
-                return middleRoundsEnd + midRound - round
-            if (startingRound == 8)
-                 return round - playerCount - startingRound - 1
-        }
-
-        if (round in startEndRounds + 1.. startEndRounds + playerCount) {
-            return startingRound
-        }
-        // startingRound can only be 1 or 8
-        return 0
+        return sequence.getOrElse(round - 1) { 0 }
     }
 }
 

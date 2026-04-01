@@ -174,7 +174,6 @@ fun HomeButton(
     onClick: ()-> Unit,
     text: String,
     enabled: Boolean = true,
-    weight: Float? = null
 ) {
     Button(
         onClick = onClick,
