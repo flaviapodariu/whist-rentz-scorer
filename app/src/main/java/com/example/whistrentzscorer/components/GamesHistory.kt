@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.storage.entity.GameEntity
 import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.ui.theme.SlateBlue
 import com.example.whistrentzscorer.ui.theme.Teal80
 import com.example.whistrentzscorer.utils.toFormattedDate
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
@@ -199,7 +200,7 @@ fun GameHistoryCard(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier
-                            .background(Teal80, RoundedCornerShape(4.dp))
+                            .background(SlateBlue, RoundedCornerShape(4.dp))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }

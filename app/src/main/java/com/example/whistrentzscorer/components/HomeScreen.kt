@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.R
-import com.example.whistrentzscorer.ui.theme.Teal40
+import com.example.whistrentzscorer.ui.theme.SoftIndigo
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
 
@@ -111,7 +111,7 @@ fun GameModeToggle(
         label = "sliderOffset"
     )
     val activeColor by animateColorAsState(
-        targetValue = if (isRentz) Coral40 else Teal40,
+        targetValue = if (isRentz) Coral40 else SoftIndigo,
         animationSpec = tween(durationMillis = 300),
         label = "activeColor"
     )
@@ -183,7 +183,7 @@ fun HomeButton(
             text = text,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.padding(top = 20.dp, bottom = 16.dp)
+            modifier = Modifier.padding(vertical = 8.dp)
         )
     }
 }

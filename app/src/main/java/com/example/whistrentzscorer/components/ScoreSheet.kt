@@ -9,7 +9,6 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,10 +16,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -46,7 +44,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.DeepPurple
-import com.example.whistrentzscorer.ui.theme.Teal80
+import com.example.whistrentzscorer.ui.theme.LightLavender
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundState
 
@@ -132,39 +130,85 @@ fun ScoreSheet(
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Box(
+                val verticalScrollState = rememberScrollState()
+
+                Row(
                     modifier = Modifier
-                        .wrapContentSize()
                         .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .wrapContentSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Top
-                    ) {
-
-                        PlayersHeader(stateVM.playerList, stateVM.currentRound, horizontalScrollState)
-
+                    // Fixed left column: header + scrollable card counts + total label
+                    Column {
                         Box(
                             modifier = Modifier
-                                .horizontalScroll(horizontalScrollState)
+                                .width(40.dp)
+                                .background(LightLavender)
+                                .border(1.dp, Color.Gray)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            ScoringCells(
-                                totalRounds = stateVM.totalRounds,
-                                playerList = stateVM.playerList,
-                                gameState = stateVM.game.state,
-                                roundHandSize = { round ->
-                                    stateVM.cardsThisRound(
-                                        round = round,
-                                        stateVM.gameType,
-                                        playerCount = stateVM.playerList.size
+                            Text(text = "", fontWeight = FontWeight.Bold)
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .background(LightLavender)
+                                .verticalScroll(verticalScrollState)
+                        ) {
+                            for (round in 1..stateVM.totalRounds) {
+                                val isCurrentRound = round == stateVM.currentRound
+                                Box(
+                                    modifier = Modifier
+                                        .width(40.dp)
+                                        .background(if (isCurrentRound) LightLavender else Color.Transparent)
+                                        .border(1.dp, Color.Gray)
+                                        .padding(8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = stateVM.cardsThisRound(
+                                            round = round,
+                                            stateVM.gameType,
+                                            playerCount = stateVM.playerList.size
+                                        ).toString()
                                     )
                                 }
-                            )
+                            }
                         }
+                        // Total label
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .border(1.dp, Color.Gray)
+                                .background(LightLavender)
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = "\u03A3", fontWeight = FontWeight.Bold)
+                        }
+                    }
 
+                    // Right section: header + scrollable scores + total row
+                    Column(
+                        modifier = Modifier.horizontalScroll(horizontalScrollState)
+                    ) {
+                        PlayersHeader(stateVM.playerList, stateVM.currentRound)
+
+                        ScoringCells(
+                            totalRounds = stateVM.totalRounds,
+                            playerList = stateVM.playerList,
+                            gameState = stateVM.game.state,
+                            verticalScrollState = verticalScrollState,
+                            currentRound = stateVM.currentRound,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Total score row
+                        TotalScoreRow(
+                            playerList = stateVM.playerList,
+                            gameState = stateVM.game.state,
+                            currentRound = stateVM.currentRound
+                        )
                     }
                 }
             }
@@ -178,30 +222,20 @@ fun ScoringCells(
     totalRounds: Int,
     playerList: List<String>,
     gameState: MutableMap<Int, MutableMap<String, RoundState>>,
-    roundHandSize: (Int) -> Int
+    verticalScrollState: ScrollState,
+    currentRound: Int,
+    modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = Modifier
+    Column(
+        modifier = modifier.verticalScroll(verticalScrollState)
     ) {
-        // 0 based indexing
-        items(totalRounds, key = { round ->
-            val roundData = gameState[round + 1]
-            "${round}_${System.identityHashCode(roundData)}"
-        }) { round ->
+        for (round in 1..totalRounds) {
+            val isCurrentRound = round == currentRound
             Row(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.background(if (isCurrentRound) LightLavender else Color.Transparent)
             ) {
-                Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .border(1.dp, Color.Gray)
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = roundHandSize(round+1).toString() )
-                }
                 playerList.forEach { player ->
-                    val playerState = gameState[round+1]?.get(player)
+                    val playerState = gameState[round]?.get(player)
                     val bid = playerState?.bid
                     val handsTaken = playerState?.handsTaken
                     val bidFailed = bid != null && handsTaken != null && bid != handsTaken
@@ -226,23 +260,11 @@ fun ScoringCells(
 }
 
 @Composable
-fun PlayersHeader(playerList: List<String>, round: Int, scroll: ScrollState) {
+fun PlayersHeader(playerList: List<String>, round: Int) {
     Row(
         modifier = Modifier
-            .horizontalScroll(scroll)
             .fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier
-                .width(40.dp)
-                .border(1.dp, Color.Gray)
-                .padding(8.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // placeholder
-            Text(text = "", fontWeight = FontWeight.Bold)
-        }
-
         playerList.forEachIndexed { i, player ->
 
             var playerNameColor = Color(0XFF2A0134)
@@ -256,7 +278,7 @@ fun PlayersHeader(playerList: List<String>, round: Int, scroll: ScrollState) {
                 modifier = Modifier
                     .width(160.dp)
                     .border(1.dp, Color.Gray)
-                    .background(Teal80)
+                    .background(LightLavender)
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -266,6 +288,34 @@ fun PlayersHeader(playerList: List<String>, round: Int, scroll: ScrollState) {
                     color = playerNameColor,
                     // todo find good size
 //                    fontSize = 22.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TotalScoreRow(
+    playerList: List<String>,
+    gameState: MutableMap<Int, MutableMap<String, RoundState>>,
+    currentRound: Int
+) {
+    Row {
+        playerList.forEach { player ->
+            val lastCompletedRound = (currentRound - 1).coerceAtLeast(0)
+            val totalScore = gameState[lastCompletedRound]?.get(player)?.score
+
+            Box(
+                modifier = Modifier
+                    .width(160.dp)
+                    .border(1.dp, Color.Gray)
+                    .background(LightLavender)
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = totalScore?.toString() ?: "0",
+                    fontWeight = FontWeight.Bold
                 )
             }
         }

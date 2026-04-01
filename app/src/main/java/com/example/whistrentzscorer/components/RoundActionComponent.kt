@@ -210,9 +210,10 @@ fun RoundActionScreen(
                     roundState = gameStateViewModel.game.state[round]!!,
                     isLastPlayer = isLastPlayer
                 )
-                val nextLegalChoice = if (illegalChoice == 0) 1 else 0
-                selectedValue = if (!isLastPlayer || illegalChoice == null)
-                    selectedValue else nextLegalChoice
+                
+                if (isLastPlayer && illegalChoice != null && cardsThisRound <= 1) {
+                    selectedValue = if (illegalChoice == 0) 1 else 0
+                }
             }
 
             ValueChooser(

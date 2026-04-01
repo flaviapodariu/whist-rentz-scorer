@@ -47,7 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.ui.WhistTopBar
-import com.example.whistrentzscorer.ui.theme.Teal40
+import com.example.whistrentzscorer.ui.theme.SoftIndigo
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Checkbox

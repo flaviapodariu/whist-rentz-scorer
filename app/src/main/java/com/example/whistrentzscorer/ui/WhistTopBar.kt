@@ -28,7 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
-import com.example.whistrentzscorer.ui.theme.Teal80
+import com.example.whistrentzscorer.ui.theme.SoftIndigo
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,8 +58,8 @@ fun WhistTopBar(
         colors = TopAppBarColors(
             containerColor = Color.Transparent,
             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-            actionIconContentColor = Teal80,
-            scrolledContainerColor = Teal80,
+            actionIconContentColor = SoftIndigo,
+            scrolledContainerColor = SoftIndigo,
             titleContentColor = MaterialTheme.colorScheme.onSurface
         ),
         title = {
