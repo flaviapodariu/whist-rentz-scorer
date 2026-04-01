@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -239,6 +240,7 @@ fun ScoringCells(
                     val bid = playerState?.bid
                     val handsTaken = playerState?.handsTaken
                     val bidFailed = bid != null && handsTaken != null && bid != handsTaken
+                    val bonusAdjustment = playerState?.bonusAdjustment ?: 0
 
                     ScoreCell(
                         score = bid,
@@ -251,7 +253,8 @@ fun ScoringCells(
                     )
                     ScoreCell(
                         score = playerState?.score,
-                        width = 80.dp
+                        width = 80.dp,
+                        bonusAdjustment = bonusAdjustment
                     )
                 }
             }
@@ -323,7 +326,7 @@ fun TotalScoreRow(
 }
 
 @Composable
-fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false) {
+fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false, bonusAdjustment: Int = 0) {
     Box(
         modifier = Modifier
             .width(width)
@@ -331,8 +334,22 @@ fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false) {
             .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
-        val displayScore = score?.toString() ?: ""
-        Text(text = displayScore)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val displayScore = score?.toString() ?: ""
+            Text(text = displayScore)
+            
+            // Show bonus indicator
+            if (bonusAdjustment != 0) {
+                Text(
+                    text = if (bonusAdjustment > 0) " ✓" else " ✗",
+                    color = if (bonusAdjustment > 0) Color(0xFF4CAF50) else Color(0xFFE53935),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
 
         if (showCross) {
             Canvas(modifier = Modifier.matchParentSize()) {

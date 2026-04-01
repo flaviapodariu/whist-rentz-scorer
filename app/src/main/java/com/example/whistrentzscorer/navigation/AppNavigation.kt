@@ -145,7 +145,8 @@ fun AppNavigation(
                     gameStateViewModel.init(
                         sharedGameConfigViewModel.players,
                         sharedGameConfigViewModel.gameType,
-                        sharedGameConfigViewModel.gameMode
+                        sharedGameConfigViewModel.gameMode,
+                        sharedGameConfigViewModel.bonus
                     )
                     gameStateViewModel.setGameId(gameId.toInt())
                     onGameStarted() },
