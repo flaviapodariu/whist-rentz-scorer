@@ -5,17 +5,19 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import android.content.pm.ActivityInfo
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -43,16 +45,21 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.Orange40
+import com.example.whistrentzscorer.ui.theme.SageGreen
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundActions
 import com.example.whistrentzscorer.viewmodels.RoundState
@@ -65,6 +72,22 @@ fun RoundActionScreen(
     onBack: () -> Unit,
     gameStateViewModel: GameStateViewModel
 ) {
+
+    val context = LocalContext.current
+    val activity = context.findActivity()
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                gameStateViewModel.autoSave()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val round = gameStateViewModel.currentRound
     val playerCount = gameStateViewModel.playerList.size
@@ -95,19 +118,6 @@ fun RoundActionScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                gameStateViewModel.autoSave()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-
     Scaffold(
         topBar = {
             WhistTopBar(
@@ -128,150 +138,169 @@ fun RoundActionScreen(
             }
         }
     ) { padding ->
-        Column(
+        BoxWithConstraints(
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+            val availableWidth = maxWidth
+            val availableHeight = maxHeight
+
+            val playerNameStyle = if (availableWidth < 360.dp)
+                MaterialTheme.typography.headlineSmall
+            else
+                MaterialTheme.typography.headlineLarge
+
+            val playerNamePadding = min(32.dp, availableWidth * 0.06f)
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                PlayerControllerButton(
-                    enabled = currentPlayer != firstPlayer,
-                    onClick = {
-                        if (action == RoundActions.BID.name) {
-                            gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                        } else {
-                            gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                        }
-                        currentPlayer = (currentPlayer - 1 + playerCount) % playerCount
-
-                        val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
-                            round = round,
-                            playerIndex = currentPlayer
-                        )
-                        selectedValue = if (action == RoundActions.BID.name) {
-                            newPlayerState.bid ?: 0
-                        } else {
-                            newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
-                        }
-                        shouldAnimate = false
-                    },
-                    icon = Icons.Filled.ArrowBackIosNew,
-                    contentDescription = "prev player"
-                )
-
-                Text(
-                    text = gameStateViewModel.playerList[currentPlayer],
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(horizontal = 32.dp)
-                )
-
-                // 0 1 2 3
-                PlayerControllerButton(
-                    enabled = !isLastPlayer(currentPlayer, playerCount, firstPlayer),
-                    onClick = {
-                        if (action == RoundActions.BID.name) {
-                            gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                        } else {
-                            gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                        }
-                        currentPlayer = (currentPlayer + 1) % playerCount
-
-                        val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
-                            round = round,
-                            playerIndex = currentPlayer
-                        )
-                        selectedValue = if (action == RoundActions.BID.name) {
-                            newPlayerState.bid ?: 0
-                        } else {
-                            newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
-                        }
-                        shouldAnimate = false
-                    },
-                    icon = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = "next player"
-                )
-
-            }
-
-            var illegalChoice: Int? = null
-
-            if (action == RoundActions.BID.name) {
-                illegalChoice = getIllegalChoice(
-                    action = action,
-                    cardsThisRound = cardsThisRound,
-                    roundState = gameStateViewModel.game.state[round]!!,
-                    isLastPlayer = isLastPlayer
-                )
-                
-                if (isLastPlayer && illegalChoice != null && cardsThisRound <= 1) {
-                    selectedValue = if (illegalChoice == 0) 1 else 0
-                }
-            }
-
-            ValueChooser(
-                action = action,
-                selectedValue = selectedValue,
-                onSelected = {
-                    selectedValue = it
-                    shouldAnimate = true
-                },
-                cardsThisRound = cardsThisRound,
-                shouldAnimate = shouldAnimate,
-                illegalChoice = illegalChoice,
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            if (isLastPlayer) {
-                Button(
-                    shape = RoundedCornerShape(8.dp),
+                Row(
                     modifier = Modifier
-                        .weight(3f)
-                        .padding(bottom = 32.dp),
-                    onClick = {
-                        if (action == RoundActions.BID.name) {
-                            gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                        }
-
-                        if (action == RoundActions.RESULTS.name) {
-                            gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                            val totalHands = gameStateViewModel.game.state[round]!!
-                                .values.sumOf { it.handsTaken ?: 0 }
-                            if (totalHands != cardsThisRound) {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar(
-                                        "Total hands taken ($totalHands) must equal cards dealt ($cardsThisRound)"
-                                    )
-                                }
-                                return@Button // returns early from onclick, and exec control is back to the Button
-                            }
-                            gameStateViewModel.saveRoundScore(round)
-                            gameStateViewModel.advanceRound()
-                        }
-                        onBack()
-                    }
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (action == RoundActions.BID.name) "Play" else "Input results",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(horizontal = 32.dp)
+
+                    PlayerControllerButton(
+                        enabled = currentPlayer != firstPlayer,
+                        onClick = {
+                            if (action == RoundActions.BID.name) {
+                                gameStateViewModel.setBid(round, currentPlayer, selectedValue)
+                            } else {
+                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
+                            }
+                            currentPlayer = (currentPlayer - 1 + playerCount) % playerCount
+
+                            val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
+                                round = round,
+                                playerIndex = currentPlayer
+                            )
+                            selectedValue = if (action == RoundActions.BID.name) {
+                                newPlayerState.bid ?: 0
+                            } else {
+                                newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                            }
+                            shouldAnimate = false
+                        },
+                        icon = Icons.Filled.ArrowBackIosNew,
+                        contentDescription = "prev player"
                     )
+
+                    Text(
+                        text = gameStateViewModel.playerList[currentPlayer],
+                        style = playerNameStyle,
+                        fontWeight = FontWeight.ExtraBold,
+                        modifier = Modifier.padding(horizontal = playerNamePadding),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    // 0 1 2 3
+                    PlayerControllerButton(
+                        enabled = !isLastPlayer(currentPlayer, playerCount, firstPlayer),
+                        onClick = {
+                            if (action == RoundActions.BID.name) {
+                                gameStateViewModel.setBid(round, currentPlayer, selectedValue)
+                            } else {
+                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
+                            }
+                            currentPlayer = (currentPlayer + 1) % playerCount
+
+                            val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
+                                round = round,
+                                playerIndex = currentPlayer
+                            )
+                            selectedValue = if (action == RoundActions.BID.name) {
+                                newPlayerState.bid ?: 0
+                            } else {
+                                newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                            }
+                            shouldAnimate = false
+                        },
+                        icon = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = "next player"
+                    )
+
                 }
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
+
+                var illegalChoice: Int? = null
+
+                if (action == RoundActions.BID.name) {
+                    illegalChoice = getIllegalChoice(
+                        action = action,
+                        cardsThisRound = cardsThisRound,
+                        roundState = gameStateViewModel.game.state[round]!!,
+                        lastPlayer = if (isLastPlayer) gameStateViewModel.playerList[currentPlayer] else null
+                    )
+                    
+                    if (isLastPlayer && illegalChoice != null && selectedValue == illegalChoice) {
+                        selectedValue = (0..cardsThisRound).first { it != illegalChoice }
+                    }
+                }
+
+                ValueChooser(
+                    action = action,
+                    selectedValue = selectedValue,
+                    onSelected = {
+                        selectedValue = it
+                        shouldAnimate = true
+                    },
+                    cardsThisRound = cardsThisRound,
+                    shouldAnimate = shouldAnimate,
+                    illegalChoice = illegalChoice,
+                )
+
+                if (isLastPlayer) {
+                    Spacer(modifier = Modifier.height(availableHeight * 0.05f))
+                    Button(
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier,
+                        onClick = {
+                            if (action == RoundActions.BID.name) {
+                                gameStateViewModel.setBid(round, currentPlayer, selectedValue)
+                            }
+
+                            if (action == RoundActions.RESULTS.name) {
+                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
+                                val totalHands = gameStateViewModel.game.state[round]!!
+                                    .values.sumOf { it.handsTaken ?: 0 }
+                                if (totalHands != cardsThisRound) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            "Total hands taken ($totalHands) must equal cards dealt ($cardsThisRound)"
+                                        )
+                                    }
+                                    return@Button // returns early from onclick, and exec control is back to the Button
+                                }
+                                gameStateViewModel.saveRoundScore(round)
+                                gameStateViewModel.advanceRound()
+                            }
+                            onBack()
+                        }
+                    ) {
+                        Text(
+                            text = if (action == RoundActions.BID.name) "Play" else "Input results",
+                            style = if (availableWidth < 360.dp)
+                                MaterialTheme.typography.titleLarge
+                            else
+                                MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(
+                                horizontal = min(32.dp, availableWidth * 0.06f),
+                                vertical = 8.dp
+                            )
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(48.dp))
+                }
             }
         }
-
-
     }
 }
 
@@ -307,103 +336,119 @@ fun ValueChooser(
     shouldAnimate: Boolean,
     illegalChoice: Int? = null,
 ) {
-
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(40.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth()
     ) {
+        val totalWidth = maxWidth
+        val horizontalPadding = totalWidth * 0.08f
+        val gap = totalWidth * 0.016f
+        val buttonContentPadding = totalWidth * 0.008f
+        val verticalPadding = totalWidth * 0.04f
 
-        for (value in 0..8) {
-            val isSelected = value == selectedValue
+        val density = LocalDensity.current
+        val fontSize = with(density) { (totalWidth * 0.038f).toPx().toSp() }
 
-            val targetColor =
-                when {
-                    value == illegalChoice -> Color.LightGray.copy(alpha = 0.5f)
-                    isSelected -> Orange40
-                    else -> ButtonDefaults.buttonColors().containerColor
-                }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            horizontalArrangement = Arrangement.spacedBy(gap),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
 
-            val animatedColor by animateColorAsState(
-                targetValue = targetColor,
-                animationSpec = tween(durationMillis = 400),
-                label = "ButtonColorAnim"
-            )
+            for (value in 0..8) {
+                val isSelected = value == selectedValue
 
-            val selectedColor = if (shouldAnimate) animatedColor else targetColor
-
-            val scale by animateFloatAsState(
-                targetValue = if (isSelected) 1.2f else 1f,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                ),
-                label = "ButtonScaleAnim"
-            )
-
-            val elevation by animateFloatAsState(
-                targetValue = if (isSelected) 8f else 0f,
-                animationSpec = tween(durationMillis = 300),
-                label = "ButtonElevationAnim"
-            )
-
-            Button(
-                onClick = {
-                    onSelected(value)
-                },
-                enabled = enabledCondition(
-                    value = value,
-                    cardsThisRound = cardsThisRound,
-                    illegalChoice = illegalChoice,
-                    action = action,
-                ),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(selectedColor),
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
+                val targetColor =
+                    when {
+                        value == illegalChoice -> Color.LightGray.copy(alpha = 0.5f)
+                        isSelected -> Orange40
+                        else -> ButtonDefaults.buttonColors().containerColor
                     }
-                    .shadow(
-                        elevation = elevation.dp,
-                        shape = RoundedCornerShape(8.dp),
-                        ambientColor = Orange40,
-                        spotColor = Orange40
-                    ),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .widthIn(min = 32.dp)
-                        .size(32.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = value.toString(),
-                        style = if (isSelected)
-                            MaterialTheme.typography.headlineMedium
-                        else
-                            MaterialTheme.typography.headlineSmall,
-                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold
-                    )
 
-                    if (value == illegalChoice) {
-                        Canvas(modifier = Modifier.matchParentSize()) {
-                            val stroke = 4.dp.toPx()
-                            drawLine(
-                                color = Color.Red,
-                                start = Offset(0f, 0f),
-                                end = Offset(size.width, size.height),
-                                strokeWidth = stroke
-                            )
-                            drawLine(
-                                color = Color.Red,
-                                start = Offset(size.width, 0f),
-                                end = Offset(0f, size.height),
-                                strokeWidth = stroke
-                            )
+                val animatedColor by animateColorAsState(
+                    targetValue = targetColor,
+                    animationSpec = tween(durationMillis = 400),
+                    label = "ButtonColorAnim"
+                )
+
+                val selectedColor = if (shouldAnimate) animatedColor else targetColor
+
+                val scale by animateFloatAsState(
+                    targetValue = if (isSelected) 1.2f else 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "ButtonScaleAnim"
+                )
+
+                val elevation by animateFloatAsState(
+                    targetValue = if (isSelected) 8f else 0f,
+                    animationSpec = tween(durationMillis = 300),
+                    label = "ButtonElevationAnim"
+                )
+
+                Button(
+                    onClick = {
+                        onSelected(value)
+                    },
+                    enabled = enabledCondition(
+                        value = value,
+                        cardsThisRound = cardsThisRound,
+                        illegalChoice = illegalChoice,
+                        action = action,
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(selectedColor),
+                    contentPadding = PaddingValues(
+                        horizontal = buttonContentPadding,
+                        vertical = buttonContentPadding
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                        .shadow(
+                            elevation = elevation.dp,
+                            shape = RoundedCornerShape(8.dp),
+                            ambientColor = Orange40,
+                            spotColor = Orange40
+                        ),
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = value.toString(),
+                            fontSize = fontSize,
+                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                            maxLines = 1
+                        )
+
+                        if (value == illegalChoice) {
+                            Canvas(modifier = Modifier.matchParentSize()) {
+                                val crossSize = size.maxDimension * 0.9f
+                                val halfCross = crossSize / 2f
+                                val centerX = size.width / 2f
+                                val centerY = size.height / 2f
+                                val stroke = (crossSize * 0.12f)
+                                    .coerceAtLeast(2.dp.toPx())
+                                drawLine(
+                                    color = Color.Red,
+                                    start = Offset(centerX - halfCross, centerY - halfCross),
+                                    end = Offset(centerX + halfCross, centerY + halfCross),
+                                    strokeWidth = stroke
+                                )
+                                drawLine(
+                                    color = Color.Red,
+                                    start = Offset(centerX + halfCross, centerY - halfCross),
+                                    end = Offset(centerX - halfCross, centerY + halfCross),
+                                    strokeWidth = stroke
+                                )
+                            }
                         }
                     }
                 }
@@ -420,15 +465,17 @@ fun getIllegalChoice(
     action: String,
     cardsThisRound: Int,
     roundState: MutableMap<String, RoundState>,
-    isLastPlayer: Boolean
+    lastPlayer: String? = null
 ): Int? {
-    if (action == RoundActions.RESULTS.name) {
+    if (action == RoundActions.RESULTS.name || lastPlayer == null) {
         return null
     }
 
-    val bidded = roundState.values.sumOf { state -> state.bid ?: 0 }
-    val difference = cardsThisRound - bidded
-    return if (difference < 0 || !isLastPlayer) null else difference
+    val bidsSoFar = roundState.entries
+        .filter { it.key != lastPlayer }
+        .sumOf { it.value.bid ?: 0 }
+    val difference = cardsThisRound - bidsSoFar
+    return if (difference < 0) null else difference
 }
 
 fun handsTakenSoFar(

@@ -13,11 +13,12 @@ val TealGrey40 = Color(0xFF546E7A)
 
 
 val Orange40 = Color(0xFFFFA726)     // bright accent
+val DarkOrange = Color(0xFFE65100)    // dark orange for high contrast
 val Coral40 = Color(0xFFFF7043)
 
 val Yellow40 = Color(0xFFFFEB3B)     // for selected items / highlights
 val DeepPurple = Color(0xFF6A1B9A)
-val HighlightOrange = Color(0xFFFF6F00)
+val DarkPurple = Color(0xFF4B0082)
 
 // Soft pastel colors for table backgrounds
 val LightLavender = Color(0xFFE6E6FA)    // gentle purple-ish

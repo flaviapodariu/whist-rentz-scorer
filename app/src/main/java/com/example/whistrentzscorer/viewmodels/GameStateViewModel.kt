@@ -32,6 +32,9 @@ class GameStateViewModel @Inject constructor(
 
     var currentRoundCards: Int by mutableIntStateOf(1)
 
+    val currentRoundBidsPlaced: Boolean
+        get() = allBidsPlaced(currentRound)
+
     var gameType: String = "11..88..11"
         private set
 
@@ -114,6 +117,11 @@ class GameStateViewModel @Inject constructor(
         val player = playerList[playerIndex]
 
         return game.state[round]?.get(player)?: RoundState()
+    }
+
+    fun allBidsPlaced(round: Int): Boolean {
+        val roundState = game.state[round] ?: return false
+        return roundState.values.all { it.bid != null }
     }
 
     fun setBid(round: Int, playerIndex: Int, bid: Int) {

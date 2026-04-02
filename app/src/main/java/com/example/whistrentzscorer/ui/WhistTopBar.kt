@@ -1,6 +1,7 @@
 package com.example.whistrentzscorer.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.ui.theme.SoftIndigo
 
@@ -40,6 +42,7 @@ fun WhistTopBar(
     isRentz: Boolean = false,
     onBid: () -> Unit = {},
     onInputResults: () -> Unit = {},
+    inputResultsEnabled: Boolean = true,
     onSelectMiniGame: () -> Unit = {},
     undoLastTurn: () -> Unit = {},
 ) {
@@ -84,32 +87,53 @@ fun WhistTopBar(
                         }
                         Spacer(modifier = Modifier.weight(1f))
                     } else {
-                        Spacer(modifier = Modifier.weight(0.85f))
-                        Button(
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                                .weight(1f),
-                            onClick = { onBid() },
-                        ) {
-                            Text(
-                                text = "Bid",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(0.5f))
+                        BoxWithConstraints {
+                            val isSmall = maxWidth < 500.dp
+                            val buttonTextStyle = if (isSmall)
+                                MaterialTheme.typography.bodyMedium
+                            else
+                                MaterialTheme.typography.titleMedium
 
-                        Button(
-                            modifier = Modifier.padding(horizontal = 6.dp)
-                                .weight(1f),
-                            onClick = { onInputResults() },
-                        ) {
-                            Text(
-                                text = "Input Results",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold,
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Spacer(modifier = Modifier.weight(0.85f))
+                                Button(
+                                    modifier = Modifier
+                                        .padding(start = 16.dp, end = 16.dp, bottom = 4.dp)
+                                        .weight(1f),
+                                    onClick = { onBid() },
+                                ) {
+                                    Text(
+                                        text = "Bid",
+                                        style = buttonTextStyle,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        maxLines = 1,
+                                    )
+                                }
+                                Spacer(modifier = Modifier.weight(0.5f))
+
+                                Button(
+                                    modifier = Modifier
+                                        .padding(start = 6.dp, end=6.dp, bottom = 4.dp)
+                                        .weight(1f),
+                                    onClick = { onInputResults() },
+                                    enabled = inputResultsEnabled,
+                                ) {
+                                    Text(
+                                        text = "Results",
+                                        style = buttonTextStyle,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                Spacer(modifier = Modifier.weight(0.85f))
+                            }
                         }
-                        Spacer(modifier = Modifier.weight(0.85f))
                     }
                 }
             } else title

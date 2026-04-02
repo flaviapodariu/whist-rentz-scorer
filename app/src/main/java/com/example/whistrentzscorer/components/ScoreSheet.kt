@@ -15,17 +15,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +47,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.WhistTopBar
-import com.example.whistrentzscorer.ui.theme.DeepPurple
+import com.example.whistrentzscorer.ui.theme.DarkPurple
 import com.example.whistrentzscorer.ui.theme.LightLavender
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundState
@@ -61,15 +64,6 @@ fun ScoreSheet(
 
     val context = LocalContext.current
     val activity = context.findActivity()
-    LaunchedEffect(Unit) {
-        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
-    }
-
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -79,6 +73,7 @@ fun ScoreSheet(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -117,6 +112,7 @@ fun ScoreSheet(
                 isRentz = isRentz,
                 onBid = onBid,
                 onInputResults = onInputResults,
+                inputResultsEnabled = stateVM.currentRoundBidsPlaced,
                 onSelectMiniGame = onSelectMiniGame,
                 undoLastTurn = {
                     showUndoConfirmation = true
@@ -125,26 +121,25 @@ fun ScoreSheet(
         }
     ) { padding ->
         if (stateVM.playerList.isNotEmpty()) {
-            Column(
+            Box(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                contentAlignment = Alignment.Center
             ) {
                 val verticalScrollState = rememberScrollState()
 
                 Row(
                     modifier = Modifier
-                        .border(1.dp, Color.Gray, RoundedCornerShape(8.dp))
+                        .border(0.3.dp, Color.LightGray, RoundedCornerShape(8.dp))
                         .clip(RoundedCornerShape(8.dp))
                 ) {
-                    // Fixed left column: header + scrollable card counts + total label
                     Column {
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
                                 .background(LightLavender)
-                                .border(1.dp, Color.Gray)
+                                .border(0.3.dp, Color.LightGray)
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -162,7 +157,7 @@ fun ScoreSheet(
                                     modifier = Modifier
                                         .width(40.dp)
                                         .background(if (isCurrentRound) LightLavender else Color.Transparent)
-                                        .border(1.dp, Color.Gray)
+                                        .border(0.3.dp, Color.LightGray)
                                         .padding(8.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -176,11 +171,11 @@ fun ScoreSheet(
                                 }
                             }
                         }
-                        // Total label
+                        // total label
                         Box(
                             modifier = Modifier
                                 .width(40.dp)
-                                .border(1.dp, Color.Gray)
+                                .border(0.3.dp, Color.LightGray)
                                 .background(LightLavender)
                                 .padding(8.dp),
                             contentAlignment = Alignment.Center
@@ -233,7 +228,7 @@ fun ScoringCells(
         for (round in 1..totalRounds) {
             val isCurrentRound = round == currentRound
             Row(
-                modifier = Modifier.background(if (isCurrentRound) LightLavender else Color.Transparent)
+                modifier = Modifier.background(if (isCurrentRound) LightLavender else Color.Transparent),
             ) {
                 playerList.forEach { player ->
                     val playerState = gameState[round]?.get(player)
@@ -273,14 +268,15 @@ fun PlayersHeader(playerList: List<String>, round: Int) {
             var playerNameColor = Color(0XFF2A0134)
             var playerFont = FontWeight.SemiBold
 
-            if (i == (round-1) % playerList.size) {
-                playerNameColor = DeepPurple
+            val isCurrentPlayer = i == (round-1) % playerList.size
+            if (isCurrentPlayer) {
+                playerNameColor = DarkPurple
                 playerFont = FontWeight.W900
             }
             Box(
                 modifier = Modifier
                     .width(160.dp)
-                    .border(1.dp, Color.Gray)
+                    .border(0.3.dp, Color.LightGray)
                     .background(LightLavender)
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
@@ -292,6 +288,20 @@ fun PlayersHeader(playerList: List<String>, round: Int) {
                     // todo find good size
 //                    fontSize = 22.sp
                 )
+                
+                if (isCurrentPlayer) {
+                    Box(
+                        modifier = Modifier.matchParentSize(),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ChevronRight,
+                            contentDescription = "Current turn",
+                            tint = DarkPurple,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -311,7 +321,7 @@ fun TotalScoreRow(
             Box(
                 modifier = Modifier
                     .width(160.dp)
-                    .border(1.dp, Color.Gray)
+                    .border(0.3.dp, Color.LightGray)
                     .background(LightLavender)
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
@@ -330,27 +340,28 @@ fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false, bonusAdjustmen
     Box(
         modifier = Modifier
             .width(width)
-            .border(1.dp, Color.Gray)
+            .border(0.3.dp, Color.LightGray)
             .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val displayScore = score?.toString() ?: ""
-            Text(text = displayScore)
-            
-            // Show bonus indicator
-            if (bonusAdjustment != 0) {
+        val displayScore = score?.toString() ?: ""
+        Text(text = displayScore)
+        
+        // Show bonus indicator positioned to the right
+        if (bonusAdjustment != 0) {
+            Box(
+                modifier = Modifier.matchParentSize()
+                    .padding(end = 4.dp),
+                contentAlignment = Alignment.CenterEnd
+            ) {
                 Text(
-                    text = if (bonusAdjustment > 0) " ✓" else " ✗",
+                    text = if (bonusAdjustment > 0) "✓" else "✗",
                     color = if (bonusAdjustment > 0) Color(0xFF4CAF50) else Color(0xFFE53935),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
-
         if (showCross) {
             Canvas(modifier = Modifier.matchParentSize()) {
                 val stroke = 2.dp.toPx()

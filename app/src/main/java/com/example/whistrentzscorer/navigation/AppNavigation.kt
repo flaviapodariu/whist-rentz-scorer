@@ -1,5 +1,6 @@
 package com.example.whistrentzscorer.navigation
 
+import android.content.pm.ActivityInfo
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -16,7 +17,7 @@ import androidx.navigation.navArgument
 import com.example.whistrentzscorer.components.CountPerPlayerScreen
 import com.example.whistrentzscorer.components.GameSetupScreen
 import com.example.whistrentzscorer.components.GamesHistory
-import com.example.whistrentzscorer.components.HomeScreen
+import com.example.whistrentzscorer.components.HomeScreenV2
 import com.example.whistrentzscorer.components.MiniGameSelectionScreen
 import com.example.whistrentzscorer.components.PlayersSetupScreen
 import com.example.whistrentzscorer.components.RentzRankScreen
@@ -77,6 +78,7 @@ fun AppNavigation(
     }
 
     val onGameStarted = {
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         navController.navigate(Screen.ScoreSheet.route)
     }
 
@@ -88,11 +90,13 @@ fun AppNavigation(
                 players = savedGame.players,
                 scoresJson = savedGame.scoresJson
             )
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             navController.navigate(Screen.ScoreSheet.route)
         }
     }
 
     val onRoundAction = { action: String, cards: Int ->
+        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         navController.navigate(Screen.RoundAction.passArgs(
             action, cards
         ))
@@ -118,7 +122,7 @@ fun AppNavigation(
         composable(
             route = Screen.Home.route
         ) {
-            HomeScreen(
+            HomeScreenV2(
                 modifier = modifier,
                 onCreateGame = { onCreateGame() },
                 onReviewHistory = { onReviewHistory() },
@@ -264,6 +268,7 @@ fun AppNavigation(
                         players = players,
                         scoresJson = game.scoresJson
                     )
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                     navController.navigate(Screen.ScoreSheet.route)
                 },
                 viewModel = homeViewModel
