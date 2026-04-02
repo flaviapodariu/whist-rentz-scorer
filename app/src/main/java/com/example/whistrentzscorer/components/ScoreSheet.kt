@@ -9,14 +9,18 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -24,11 +28,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,6 +72,7 @@ fun ScoreSheet(
     val activity = context.findActivity()
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 stateVM.autoSave()
@@ -81,6 +88,20 @@ fun ScoreSheet(
     val horizontalScrollState = rememberScrollState()
 
     var showUndoConfirmation by remember { mutableStateOf(false) }
+    var showPodium by remember { mutableStateOf(false) }
+
+    LaunchedEffect(stateVM.currentRound) {
+        if (stateVM.isGameFinished) {
+            showPodium = true
+        }
+    }
+
+    if (showPodium && stateVM.isGameFinished) {
+        PodiumDialog(
+            rankings = stateVM.getFinalRankings(),
+            onDismiss = { showPodium = false }
+        )
+    }
 
     if (showUndoConfirmation) {
         AlertDialog(
@@ -203,7 +224,8 @@ fun ScoreSheet(
                         TotalScoreRow(
                             playerList = stateVM.playerList,
                             gameState = stateVM.game.state,
-                            currentRound = stateVM.currentRound
+                            currentRound = stateVM.currentRound,
+                            isGameFinished = stateVM.isGameFinished
                         )
                     }
                 }
@@ -311,12 +333,28 @@ fun PlayersHeader(playerList: List<String>, round: Int) {
 fun TotalScoreRow(
     playerList: List<String>,
     gameState: MutableMap<Int, MutableMap<String, RoundState>>,
-    currentRound: Int
+    currentRound: Int,
+    isGameFinished: Boolean = false
 ) {
+    val lastCompletedRound = (currentRound - 1).coerceAtLeast(0)
+
+    val rankMap = if (isGameFinished) {
+        val scores = playerList.map { player ->
+            player to (gameState[lastCompletedRound]?.get(player)?.score ?: 0)
+        }.sortedByDescending { it.second }
+
+        val medals = listOf("\uD83E\uDD47", "\uD83E\uDD48", "\uD83E\uDD49")
+        val result = mutableMapOf<String, String>()
+        scores.forEachIndexed { index, (player, _) ->
+            result[player] = if (index < 3) medals[index] else "#${index + 1}"
+        }
+        result
+    } else emptyMap()
+
     Row {
         playerList.forEach { player ->
-            val lastCompletedRound = (currentRound - 1).coerceAtLeast(0)
             val totalScore = gameState[lastCompletedRound]?.get(player)?.score
+            val rank = rankMap[player]
 
             Box(
                 modifier = Modifier
@@ -326,10 +364,26 @@ fun TotalScoreRow(
                     .padding(8.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = totalScore?.toString() ?: "0",
-                    fontWeight = FontWeight.Bold
-                )
+                if (rank != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = rank,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = " ${totalScore?.toString() ?: "0"}",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                } else {
+                    Text(
+                        text = totalScore?.toString() ?: "0",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -381,4 +435,119 @@ fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+@Composable
+fun PodiumDialog(
+    rankings: List<Pair<String, Int>>,
+    onDismiss: () -> Unit
+) {
+    val medals = listOf("\uD83E\uDD47", "\uD83E\uDD48", "\uD83E\uDD49")
+    val podiumColors = listOf(
+        Color(0xFFFFD700),
+        Color(0xFFC0C0C0),
+        Color(0xFFCD7F32)
+    )
+    val podiumHeights = listOf(120.dp, 90.dp, 70.dp)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close", fontWeight = FontWeight.Bold)
+            }
+        },
+        title = {
+            Text(
+                text = "\uD83C\uDFC6 Final Results",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val podiumCount = minOf(3, rankings.size)
+                val podiumOrder = when (podiumCount) {
+                    3 -> listOf(1, 0, 2)
+                    2 -> listOf(1, 0)
+                    else -> listOf(0)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    podiumOrder.forEach { idx ->
+                        val (player, score) = rankings[idx]
+                        Column(
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp)
+                                .widthIn(min = 70.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = medals[idx],
+                                fontSize = if (idx == 0) 32.sp else 24.sp
+                            )
+                            Text(
+                                text = player,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = score.toString(),
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp,
+                                color = DarkPurple
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(podiumHeights[0] - podiumHeights[idx]))
+                            Box(
+                                modifier = Modifier
+                                    .width(60.dp)
+                                    .height(podiumHeights[idx])
+                                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                                    .background(podiumColors[idx])
+                            )
+                        }
+                    }
+                }
+
+                if (rankings.size > 3) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Runners-up",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    rankings.drop(3).forEachIndexed { index, (player, score) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "${index + 4}. $player",
+                                fontSize = 14.sp
+                            )
+                            Text(
+                                text = score.toString(),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = DarkPurple
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    )
 }

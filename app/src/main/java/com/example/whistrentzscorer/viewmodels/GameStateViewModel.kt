@@ -47,6 +47,9 @@ class GameStateViewModel @Inject constructor(
     var bonusPoints: Int = 0
         private set
 
+    val isGameFinished: Boolean
+        get() = totalRounds > 0 && currentRound > totalRounds
+
     var selectedMiniGame: RentzMiniGame? by mutableStateOf(null)
         private set
 
@@ -106,6 +109,14 @@ class GameStateViewModel @Inject constructor(
         }
     }
 
+
+    fun getFinalRankings(): List<Pair<String, Int>> {
+        val lastRound = totalRounds
+        return playerList.map { player ->
+            val score = game.state[lastRound]?.get(player)?.score ?: 0
+            player to score
+        }.sortedByDescending { it.second }
+    }
 
     fun getCurrentPlayer(): Int {
        return (currentRound - 1) % playerList.size

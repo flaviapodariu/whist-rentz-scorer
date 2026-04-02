@@ -92,11 +92,7 @@ fun RoundActionScreen(
     val round = gameStateViewModel.currentRound
     val playerCount = gameStateViewModel.playerList.size
 
-    var firstPlayer by remember {
-        mutableIntStateOf(
-            gameStateViewModel.getCurrentPlayer()
-        )
-    }
+    val firstPlayer = remember { gameStateViewModel.getCurrentPlayer() }
 
     var currentPlayer by remember {
         mutableIntStateOf(
@@ -112,8 +108,6 @@ fun RoundActionScreen(
     }
 
     var shouldAnimate by remember { mutableStateOf(false) }
-
-    val isLastPlayer = isLastPlayer(currentPlayer, playerCount, firstPlayer)
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -153,6 +147,42 @@ fun RoundActionScreen(
 
             val playerNamePadding = min(32.dp, availableWidth * 0.06f)
 
+            val saveAndNavigate = { direction: Int ->
+                if (action == RoundActions.BID.name) {
+                    gameStateViewModel.setBid(round, currentPlayer, selectedValue)
+                } else {
+                    gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
+                }
+                currentPlayer = (currentPlayer + direction + playerCount) % playerCount
+
+                val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
+                    round = round,
+                    playerIndex = currentPlayer
+                )
+                selectedValue = if (action == RoundActions.BID.name) {
+                    newPlayerState.bid ?: 0
+                } else {
+                    newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                }
+
+                if (direction == 1) {
+                    val nextIsLast = isLastPlayer(currentPlayer, playerCount, firstPlayer)
+                    if (nextIsLast && action == RoundActions.BID.name) {
+                        val illegal = getIllegalChoice(
+                            action = action,
+                            cardsThisRound = cardsThisRound,
+                            roundState = gameStateViewModel.game.state[round]!!,
+                            lastPlayer = gameStateViewModel.playerList[currentPlayer]
+                        )
+                        if (illegal != null && selectedValue == illegal) {
+                            selectedValue = (0..cardsThisRound).first { it != illegal }
+                        }
+                    }
+                }
+
+                shouldAnimate = false
+            }
+
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
@@ -165,28 +195,9 @@ fun RoundActionScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     PlayerControllerButton(
                         enabled = currentPlayer != firstPlayer,
-                        onClick = {
-                            if (action == RoundActions.BID.name) {
-                                gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                            } else {
-                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                            }
-                            currentPlayer = (currentPlayer - 1 + playerCount) % playerCount
-
-                            val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
-                                round = round,
-                                playerIndex = currentPlayer
-                            )
-                            selectedValue = if (action == RoundActions.BID.name) {
-                                newPlayerState.bid ?: 0
-                            } else {
-                                newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
-                            }
-                            shouldAnimate = false
-                        },
+                        onClick = { saveAndNavigate(-1) },
                         icon = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "prev player"
                     )
@@ -200,46 +211,12 @@ fun RoundActionScreen(
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    // 0 1 2 3
                     PlayerControllerButton(
                         enabled = !isLastPlayer(currentPlayer, playerCount, firstPlayer),
-                        onClick = {
-                            if (action == RoundActions.BID.name) {
-                                gameStateViewModel.setBid(round, currentPlayer, selectedValue)
-                            } else {
-                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                            }
-                            currentPlayer = (currentPlayer + 1) % playerCount
-
-                            val newPlayerState = gameStateViewModel.getRoundStateForPlayer(
-                                round = round,
-                                playerIndex = currentPlayer
-                            )
-                            selectedValue = if (action == RoundActions.BID.name) {
-                                newPlayerState.bid ?: 0
-                            } else {
-                                newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
-                            }
-
-                            val nextIsLast = isLastPlayer(currentPlayer, playerCount, firstPlayer)
-                            if (nextIsLast && action == RoundActions.BID.name) {
-                                val illegal = getIllegalChoice(
-                                    action = action,
-                                    cardsThisRound = cardsThisRound,
-                                    roundState = gameStateViewModel.game.state[round]!!,
-                                    lastPlayer = gameStateViewModel.playerList[currentPlayer]
-                                )
-                                if (illegal != null && selectedValue == illegal) {
-                                    selectedValue = (0..cardsThisRound).first { it != illegal }
-                                }
-                            }
-
-                            shouldAnimate = false
-                        },
+                        onClick = { saveAndNavigate(1) },
                         icon = Icons.AutoMirrored.Filled.ArrowForwardIos,
                         contentDescription = "next player"
                     )
-
                 }
 
                 val isCurrentPlayerLast = isLastPlayer(currentPlayer, playerCount, firstPlayer)
@@ -251,7 +228,6 @@ fun RoundActionScreen(
                         lastPlayer = gameStateViewModel.playerList[currentPlayer]
                     )
                 } else null
-
 
                 key(currentPlayer) {
                     ValueChooser(
@@ -271,7 +247,6 @@ fun RoundActionScreen(
                     Spacer(modifier = Modifier.height(availableHeight * 0.05f))
                     Button(
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier,
                         onClick = {
                             if (action == RoundActions.BID.name) {
                                 gameStateViewModel.setBid(round, currentPlayer, selectedValue)
@@ -323,21 +298,17 @@ fun PlayerControllerButton(
     icon: ImageVector,
     contentDescription: String
 ) {
-    Box(
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp)
     ) {
-        IconButton(
-            onClick = onClick,
-            enabled = enabled,
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription
-            )
-        }
+        Icon(
+            icon,
+            contentDescription
+        )
     }
 }
-
 
 @Composable
 fun ValueChooser(
@@ -488,15 +459,6 @@ fun getIllegalChoice(
         .sumOf { it.value.bid ?: 0 }
     val difference = cardsThisRound - bidsSoFar
     return if (difference < 0) null else difference
-}
-
-fun handsTakenSoFar(
-    roundState: MutableMap<String, RoundState>,
-    excludePlayer: String? = null
-): Int {
-    return roundState.entries
-        .filter { it.key != excludePlayer }
-        .sumOf { it.value.handsTaken ?: 0 }
 }
 
 fun enabledCondition(

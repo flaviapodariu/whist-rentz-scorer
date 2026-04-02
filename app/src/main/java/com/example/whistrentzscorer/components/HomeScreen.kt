@@ -1,5 +1,6 @@
 package com.example.whistrentzscorer.components
 
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -35,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,18 +50,17 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.R
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.DeepPurpleButton
 import com.example.whistrentzscorer.ui.theme.LightLavender
 import com.example.whistrentzscorer.ui.theme.PaleBlue
-import com.example.whistrentzscorer.ui.theme.SlateBlue
 import com.example.whistrentzscorer.ui.theme.SoftIndigo
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
 
@@ -233,6 +234,15 @@ fun HomeScreenV2(
     onResume: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val activity = context.findActivity()
+    DisposableEffect(Unit) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
     val gameToResume = viewModel.gameToResume.collectAsState().value
     val selectedGameMode by viewModel.selectedGameMode.collectAsState()
 
