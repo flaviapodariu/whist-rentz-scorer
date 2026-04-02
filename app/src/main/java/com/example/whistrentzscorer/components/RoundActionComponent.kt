@@ -1,19 +1,19 @@
 package com.example.whistrentzscorer.components
 
+import android.content.pm.ActivityInfo
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import android.content.pm.ActivityInfo
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,31 +35,31 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.Orange40
-import com.example.whistrentzscorer.ui.theme.SageGreen
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.RoundActions
 import com.example.whistrentzscorer.viewmodels.RoundState
@@ -220,6 +220,20 @@ fun RoundActionScreen(
                             } else {
                                 newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
                             }
+
+                            val nextIsLast = isLastPlayer(currentPlayer, playerCount, firstPlayer)
+                            if (nextIsLast && action == RoundActions.BID.name) {
+                                val illegal = getIllegalChoice(
+                                    action = action,
+                                    cardsThisRound = cardsThisRound,
+                                    roundState = gameStateViewModel.game.state[round]!!,
+                                    lastPlayer = gameStateViewModel.playerList[currentPlayer]
+                                )
+                                if (illegal != null && selectedValue == illegal) {
+                                    selectedValue = (0..cardsThisRound).first { it != illegal }
+                                }
+                            }
+
                             shouldAnimate = false
                         },
                         icon = Icons.AutoMirrored.Filled.ArrowForwardIos,
@@ -228,34 +242,32 @@ fun RoundActionScreen(
 
                 }
 
-                var illegalChoice: Int? = null
-
-                if (action == RoundActions.BID.name) {
-                    illegalChoice = getIllegalChoice(
+                val isCurrentPlayerLast = isLastPlayer(currentPlayer, playerCount, firstPlayer)
+                val illegalChoice: Int? = if (action == RoundActions.BID.name && isCurrentPlayerLast) {
+                    getIllegalChoice(
                         action = action,
                         cardsThisRound = cardsThisRound,
                         roundState = gameStateViewModel.game.state[round]!!,
-                        lastPlayer = if (isLastPlayer) gameStateViewModel.playerList[currentPlayer] else null
+                        lastPlayer = gameStateViewModel.playerList[currentPlayer]
                     )
-                    
-                    if (isLastPlayer && illegalChoice != null && selectedValue == illegalChoice) {
-                        selectedValue = (0..cardsThisRound).first { it != illegalChoice }
-                    }
+                } else null
+
+
+                key(currentPlayer) {
+                    ValueChooser(
+                        action = action,
+                        selectedValue = selectedValue,
+                        onSelected = {
+                            selectedValue = it
+                            shouldAnimate = true
+                        },
+                        cardsThisRound = cardsThisRound,
+                        shouldAnimate = shouldAnimate,
+                        illegalChoice = illegalChoice,
+                    )
                 }
 
-                ValueChooser(
-                    action = action,
-                    selectedValue = selectedValue,
-                    onSelected = {
-                        selectedValue = it
-                        shouldAnimate = true
-                    },
-                    cardsThisRound = cardsThisRound,
-                    shouldAnimate = shouldAnimate,
-                    illegalChoice = illegalChoice,
-                )
-
-                if (isLastPlayer) {
+                if (isCurrentPlayerLast) {
                     Spacer(modifier = Modifier.height(availableHeight * 0.05f))
                     Button(
                         shape = RoundedCornerShape(8.dp),
@@ -357,7 +369,7 @@ fun ValueChooser(
         ) {
 
             for (value in 0..8) {
-                val isSelected = value == selectedValue
+                val isSelected = value == selectedValue && value != illegalChoice
 
                 val targetColor =
                     when {
