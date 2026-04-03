@@ -13,6 +13,7 @@ interface IGameRepository {
     fun allGamesByType(gameType: String): Flow<List<GameEntity>>
     suspend fun addGame(game: Game): Long
     suspend fun updateScore(gameId: Int, score: String)
+    suspend fun updateElapsedTime(gameId: Int, elapsedTime: Long)
     suspend fun getGameById(gameId: Int): Game?
     suspend fun getLastUnfinishedGame(): Game?
     suspend fun getLastUnfinishedGameByType(gameType: String): Game?
@@ -34,6 +35,10 @@ class GameRepository @Inject constructor(
 
     override suspend fun updateScore(gameId: Int, score: String) {
         return gameDao.updateScore(gameId, score)
+    }
+
+    override suspend fun updateElapsedTime(gameId: Int, elapsedTime: Long) {
+        return gameDao.updateElapsedTime(gameId, elapsedTime)
     }
 
     override suspend fun getGameById(gameId: Int): Game? {

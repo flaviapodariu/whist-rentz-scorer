@@ -32,4 +32,7 @@ interface GameDao {
 
     @Query("UPDATE games SET scoresJson = :score WHERE id = :gameId")
     suspend fun updateScore(gameId: Int, score: String)
+
+    @Query("UPDATE games SET elapsedTime = :elapsedTime WHERE id = :gameId")
+    suspend fun updateElapsedTime(gameId: Int, elapsedTime: Long)
 }

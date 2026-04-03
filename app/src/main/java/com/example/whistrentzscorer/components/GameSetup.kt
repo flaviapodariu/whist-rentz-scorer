@@ -198,7 +198,7 @@ fun PlayersSetupScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "${playerCount} player${if (playerCount != 1) "s" else ""} added",
+                text = "$playerCount player${if (playerCount != 1) "s" else ""} added",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )

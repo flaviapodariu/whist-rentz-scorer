@@ -2,6 +2,7 @@ package com.example.whistrentzscorer.viewmodels
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +13,8 @@ import com.example.whistrentzscorer.storage.repository.IGameRepository
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.math.abs
@@ -46,6 +49,31 @@ class GameStateViewModel @Inject constructor(
 
     var bonusPoints: Int = 0
         private set
+
+    var elapsedSeconds: Long by mutableLongStateOf(0L)
+
+    private var timerJob: Job? = null
+    private var timerRunning = false
+
+    fun startTimer() {
+        if (timerRunning || gameId == 0 || isGameFinished) return
+        timerRunning = true
+        timerJob = viewModelScope.launch {
+            while (timerRunning && !isGameFinished) {
+                delay(1000L)
+                if (timerRunning) {
+                    elapsedSeconds++
+                }
+            }
+        }
+    }
+
+    fun pauseTimer() {
+        timerRunning = false
+        timerJob?.cancel()
+        timerJob = null
+        autoSave()
+    }
 
     val isGameFinished: Boolean
         get() = totalRounds > 0 && currentRound > totalRounds
@@ -246,10 +274,11 @@ class GameStateViewModel @Inject constructor(
             )
             val json = gson.toJson(saveData)
             gameRepository.updateScore(gameId, json)
+            gameRepository.updateElapsedTime(gameId, elapsedSeconds)
         }
     }
 
-    fun restoreGame(id: Int, players: List<String>, scoresJson: String) {
+    fun restoreGame(id: Int, players: List<String>, scoresJson: String, elapsedTime: Long = 0L) {
         gameId = id
         
         if (scoresJson.isBlank()) {
@@ -265,6 +294,7 @@ class GameStateViewModel @Inject constructor(
             gameType = saveData.gameType
             bonusPoints = saveData.bonusPoints
             currentRound = saveData.currentRound
+            elapsedSeconds = elapsedTime
             totalRounds = players.size * 3 + 12
 
             game = GameState()

@@ -14,8 +14,15 @@ data class GameEntity (
     val players: String,
     val isFinished: Boolean,
     val scoresJson: String,
-    val gameType: String = "whist"
-)
+    val gameType: String = "whist",
+    val elapsedTime: Long = 0L
+) {
+    fun parsePlayers(): List<String> {
+        return players.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    }
+}
+
+
 
 fun GameEntity.toDomain(): Game {
     return Game(
@@ -23,9 +30,8 @@ fun GameEntity.toDomain(): Game {
         timestamp = timestamp,
         scoresJson = scoresJson,
         isFinished = isFinished,
-        players = players.split(",")
-            .map { it.trim() }
-            .filter { it.isNotBlank() },
-        gameType = gameType
+        players = parsePlayers(),
+        gameType = gameType,
+        elapsedTime = elapsedTime
     )
 }

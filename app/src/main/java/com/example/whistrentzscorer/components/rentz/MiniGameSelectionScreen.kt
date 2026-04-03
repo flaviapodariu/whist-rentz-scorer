@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.rentz
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

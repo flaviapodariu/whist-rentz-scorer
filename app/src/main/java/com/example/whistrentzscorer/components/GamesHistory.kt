@@ -39,11 +39,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.storage.entity.GameEntity
 import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.SlateBlue
-import com.example.whistrentzscorer.ui.theme.Teal80
 import com.example.whistrentzscorer.utils.toFormattedDate
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
 import com.google.gson.Gson
@@ -53,7 +51,7 @@ import com.google.gson.reflect.TypeToken
 fun GamesHistory(
     onBack: () -> Unit,
     onGameClick: (GameEntity) -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel
 ) {
     val games by viewModel.allGames.collectAsState()
 
@@ -168,7 +166,7 @@ fun GameHistoryCard(
     game: GameEntity,
     onClick: () -> Unit
 ) {
-    val players = game.players.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    val players = game.parsePlayers()
     
     Card(
         modifier = Modifier

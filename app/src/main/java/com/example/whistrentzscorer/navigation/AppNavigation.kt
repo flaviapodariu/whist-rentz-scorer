@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -14,18 +13,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.whistrentzscorer.components.CountPerPlayerScreen
+import com.example.whistrentzscorer.components.rentz.CountPerPlayerScreen
 import com.example.whistrentzscorer.components.GameSetupScreen
 import com.example.whistrentzscorer.components.GamesHistory
 import com.example.whistrentzscorer.components.HomeScreenV2
-import com.example.whistrentzscorer.components.MiniGameSelectionScreen
+import com.example.whistrentzscorer.components.rentz.MiniGameSelectionScreen
 import com.example.whistrentzscorer.components.PlayersSetupScreen
-import com.example.whistrentzscorer.components.RentzRankScreen
-import com.example.whistrentzscorer.components.RentzWhistScreen
+import com.example.whistrentzscorer.components.rentz.RentzRankScreen
+import com.example.whistrentzscorer.components.rentz.RentzWhistScreen
 import com.example.whistrentzscorer.components.RoundActionScreen
 import com.example.whistrentzscorer.components.ScoreSheet
-import com.example.whistrentzscorer.components.SinglePlayerCheckboxScreen
-import com.example.whistrentzscorer.components.TotaleScreen
+import com.example.whistrentzscorer.components.rentz.SinglePlayerCheckboxScreen
+import com.example.whistrentzscorer.components.rentz.TotaleScreen
 import com.example.whistrentzscorer.objects.RentzInputType
 import com.example.whistrentzscorer.objects.RentzMiniGame
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
@@ -40,12 +39,9 @@ fun AppNavigation(
     activity: ComponentActivity,
     modifier: Modifier,
 ) {
-
     val sharedGameConfigViewModel: GameConfigViewModel = hiltViewModel(activity)
     val homeViewModel: HomeViewModel = hiltViewModel(activity)
     val gameStateViewModel: GameStateViewModel = hiltViewModel(activity)
-    val coroutineScope = rememberCoroutineScope()
-
 
     val gameToResume by homeViewModel.gameToResume.collectAsState(initial = null)
 
@@ -54,7 +50,9 @@ fun AppNavigation(
             navController.popBackStack()
         }
     }
+
     val onScoreSheetBack = { currRound: Int ->
+        homeViewModel.loadLastUnfinishedGame()
         if (currRound > 1) {
             navController.navigate(Screen.Home.route) {
                 popUpTo(0)
@@ -88,7 +86,8 @@ fun AppNavigation(
             gameStateViewModel.restoreGame(
                 id = savedGame.id,
                 players = savedGame.players,
-                scoresJson = savedGame.scoresJson
+                scoresJson = savedGame.scoresJson,
+                elapsedTime = savedGame.elapsedTime
             )
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
             navController.navigate(Screen.ScoreSheet.route)
@@ -262,11 +261,12 @@ fun AppNavigation(
             GamesHistory(
                 onBack = { onBack() },
                 onGameClick = { game ->
-                    val players = game.players.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    val players = game.parsePlayers()
                     gameStateViewModel.restoreGame(
                         id = game.id,
                         players = players,
-                        scoresJson = game.scoresJson
+                        scoresJson = game.scoresJson,
+                        elapsedTime = game.elapsedTime
                     )
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
                     navController.navigate(Screen.ScoreSheet.route)

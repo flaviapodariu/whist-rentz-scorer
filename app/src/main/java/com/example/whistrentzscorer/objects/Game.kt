@@ -10,7 +10,8 @@ data class Game(
     val players: List<String>,
     val isFinished: Boolean,
     val scoresJson: String,
-    val gameType: String = "whist"
+    val gameType: String = "whist",
+    val elapsedTime: Long = 0L
 )
 
 fun Game.toEntity(id: Int = 0): GameEntity {
@@ -20,6 +21,7 @@ fun Game.toEntity(id: Int = 0): GameEntity {
         players = players.joinToString(separator = ","),
         isFinished = isFinished,
         scoresJson = scoresJson,
-        gameType = gameType
+        gameType = gameType,
+        elapsedTime = elapsedTime
     )
 }

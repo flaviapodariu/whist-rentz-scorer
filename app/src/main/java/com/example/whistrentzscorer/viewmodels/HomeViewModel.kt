@@ -49,7 +49,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun loadLastUnfinishedGame() {
+    fun loadLastUnfinishedGame() {
         viewModelScope.launch {
             val toResume = gameRepository.getLastUnfinishedGameByType(_selectedGameMode.value)
             _gameToResume.value = toResume

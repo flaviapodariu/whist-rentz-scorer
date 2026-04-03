@@ -238,6 +238,11 @@ fun ScoreSheet(
                         )
                     }
                 }
+
+                GameTimer(
+                    stateVM = stateVM,
+                    modifier = Modifier.align(Alignment.BottomStart)
+                )
             }
         }
     }
