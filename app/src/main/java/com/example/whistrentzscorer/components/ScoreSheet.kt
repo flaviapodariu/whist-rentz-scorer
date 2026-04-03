@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -149,6 +150,14 @@ fun ScoreSheet(
                 contentAlignment = Alignment.Center
             ) {
                 val verticalScrollState = rememberScrollState()
+                val density = LocalDensity.current
+
+                LaunchedEffect(stateVM.currentRound) {
+                    val rowHeightPx = with(density) { 36.dp.toPx() }
+                    val targetRow = (stateVM.currentRound - 1).coerceAtLeast(0)
+                    val scrollTarget = (targetRow * rowHeightPx).toInt()
+                    verticalScrollState.animateScrollTo(scrollTarget)
+                }
 
                 Row(
                     modifier = Modifier

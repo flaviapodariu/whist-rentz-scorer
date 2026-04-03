@@ -100,10 +100,17 @@ fun RoundActionScreen(
         )
     }
 
+    // Local buffer for handsTaken during results input — only committed on confirm
+    val localHandsTaken = remember { mutableMapOf<Int, Int>() }
+
     var selectedValue by remember {
         mutableIntStateOf(
-            gameStateViewModel
-                .getRoundStateForPlayer(round, currentPlayer).bid ?: 0
+            if (action == RoundActions.RESULTS.name) {
+                localHandsTaken[currentPlayer]
+                    ?: gameStateViewModel.getRoundStateForPlayer(round, currentPlayer).bid ?: 0
+            } else {
+                gameStateViewModel.getRoundStateForPlayer(round, currentPlayer).bid ?: 0
+            }
         )
     }
 
@@ -151,7 +158,7 @@ fun RoundActionScreen(
                 if (action == RoundActions.BID.name) {
                     gameStateViewModel.setBid(round, currentPlayer, selectedValue)
                 } else {
-                    gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
+                    localHandsTaken[currentPlayer] = selectedValue
                 }
                 currentPlayer = (currentPlayer + direction + playerCount) % playerCount
 
@@ -162,7 +169,7 @@ fun RoundActionScreen(
                 selectedValue = if (action == RoundActions.BID.name) {
                     newPlayerState.bid ?: 0
                 } else {
-                    newPlayerState.handsTaken ?: newPlayerState.bid ?: 0
+                    localHandsTaken[currentPlayer] ?: newPlayerState.bid ?: 0
                 }
 
                 if (direction == 1) {
@@ -253,16 +260,19 @@ fun RoundActionScreen(
                             }
 
                             if (action == RoundActions.RESULTS.name) {
-                                gameStateViewModel.setHandsTaken(round, currentPlayer, selectedValue)
-                                val totalHands = gameStateViewModel.game.state[round]!!
-                                    .values.sumOf { it.handsTaken ?: 0 }
+                                localHandsTaken[currentPlayer] = selectedValue
+                                val totalHands = localHandsTaken.values.sum()
                                 if (totalHands != cardsThisRound) {
                                     scope.launch {
                                         snackbarHostState.showSnackbar(
                                             "Total hands taken ($totalHands) must equal cards dealt ($cardsThisRound)"
                                         )
                                     }
-                                    return@Button // returns early from onclick, and exec control is back to the Button
+                                    return@Button
+                                }
+                                // Commit all buffered results to game state
+                                localHandsTaken.forEach { (playerIdx, hands) ->
+                                    gameStateViewModel.setHandsTaken(round, playerIdx, hands)
                                 }
                                 gameStateViewModel.saveRoundScore(round)
                                 gameStateViewModel.advanceRound()

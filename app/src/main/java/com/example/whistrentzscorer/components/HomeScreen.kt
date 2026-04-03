@@ -389,13 +389,13 @@ private fun ActionCard(
     Card(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
+        modifier = if (enabled) modifier
             .shadow(
-                elevation = if (enabled) 6.dp else 2.dp,
+                elevation = 6.dp,
                 shape = RoundedCornerShape(16.dp),
                 ambientColor = containerColor.copy(alpha = 0.3f),
                 spotColor = containerColor.copy(alpha = 0.3f)
-            ),
+            ) else modifier,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = containerColor,

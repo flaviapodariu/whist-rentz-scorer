@@ -102,9 +102,10 @@ fun PlayersSetupScreen(
                 .padding(paddingValues)
                 .imePadding()
                 .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.weight(2f))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
@@ -230,6 +231,8 @@ fun PlayersSetupScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             }
+
+            Spacer(modifier = Modifier.weight(3f))
         }
     }
 }
