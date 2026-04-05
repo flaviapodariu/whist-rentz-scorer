@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.whist
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,9 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -50,7 +50,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
 import kotlinx.coroutines.launch
 
@@ -90,7 +89,7 @@ fun PlayersSetupScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "Add Players") },
                 onBack = onBack
             )
@@ -256,7 +255,7 @@ fun GameSetupScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "Game Preferences") },
                 onBack = onBack
             )

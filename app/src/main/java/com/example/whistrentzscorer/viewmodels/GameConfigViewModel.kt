@@ -9,12 +9,13 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.whistrentzscorer.objects.Game
 import com.example.whistrentzscorer.storage.repository.GameRepository
+import com.example.whistrentzscorer.storage.repository.IGameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class GameConfigViewModel @Inject constructor(
-    private val gameRepository: GameRepository
+    private val gameRepository: IGameRepository
 ) : ViewModel() {
 
     val players = mutableStateListOf<String>()

@@ -1,11 +1,7 @@
 package com.example.whistrentzscorer
 
-import com.example.whistrentzscorer.components.enabledCondition
-import com.example.whistrentzscorer.components.getIllegalChoice
-import com.example.whistrentzscorer.components.isLastPlayer
 import com.example.whistrentzscorer.storage.repository.IGameRepository
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
-import com.example.whistrentzscorer.viewmodels.RoundActions
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

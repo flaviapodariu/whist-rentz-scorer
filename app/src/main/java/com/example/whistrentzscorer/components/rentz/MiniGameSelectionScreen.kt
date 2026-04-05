@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.objects.RentzMiniGame
-import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.components.whist.AppTopBar
 
 @Composable
 fun MiniGameSelectionScreen(
@@ -34,7 +34,7 @@ fun MiniGameSelectionScreen(
 ) {
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "Select Mini Game") },
                 onBack = onBack
             )

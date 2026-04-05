@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.shared
 
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.AnimatedVisibility
@@ -57,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.example.whistrentzscorer.R
+import com.example.whistrentzscorer.components.whist.findActivity
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.DeepPurpleButton
 import com.example.whistrentzscorer.ui.theme.LightLavender

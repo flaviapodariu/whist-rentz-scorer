@@ -22,8 +22,6 @@ data class GameEntity (
     }
 }
 
-
-
 fun GameEntity.toDomain(): Game {
     return Game(
         id = id,

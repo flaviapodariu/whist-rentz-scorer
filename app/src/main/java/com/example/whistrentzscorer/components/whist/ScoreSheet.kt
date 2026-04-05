@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.whist
 
 import android.app.Activity
 import android.content.Context
@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.components.shared.GameTimer
 import com.example.whistrentzscorer.ui.theme.DarkPurple
 import com.example.whistrentzscorer.ui.theme.LightLavender
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
@@ -127,7 +127,7 @@ fun ScoreSheet(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "") },
                 onBack = onBack,
                 isInGame = true,

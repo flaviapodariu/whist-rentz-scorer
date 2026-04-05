@@ -40,7 +40,7 @@ abstract class AppDB : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDB::class.java,
-                    "flyscore_database"
+                    "whist_rentz_db"
                 )
                     .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                     .build()

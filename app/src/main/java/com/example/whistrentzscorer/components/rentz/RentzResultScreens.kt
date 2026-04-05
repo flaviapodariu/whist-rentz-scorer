@@ -42,7 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.objects.RentzMiniGame
-import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.components.whist.AppTopBar
 
 /**
  * Single player checkbox input — for King of Hearts and 10 of Clubs.
@@ -59,7 +59,7 @@ fun SinglePlayerCheckboxScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(miniGame.displayName) },
                 onBack = onBack
             )
@@ -155,7 +155,7 @@ fun CountPerPlayerScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(miniGame.displayName) },
                 onBack = onBack
             )
@@ -302,7 +302,7 @@ fun RentzRankScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text("Rentz") },
                 onBack = onBack
             )
@@ -456,7 +456,7 @@ fun TotaleScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text("Totale") },
                 onBack = onBack
             )
@@ -603,7 +603,7 @@ fun RentzWhistScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text("Whist") },
                 onBack = onBack
             )

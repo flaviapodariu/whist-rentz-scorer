@@ -2,7 +2,6 @@ package com.example.whistrentzscorer.navigation
 
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
-    data object Search : Screen("search")
     data object PlayersSetup : Screen("playersSetup/{game}") {
         fun passArgs(game: String) = "playersSetup/$game"
     }

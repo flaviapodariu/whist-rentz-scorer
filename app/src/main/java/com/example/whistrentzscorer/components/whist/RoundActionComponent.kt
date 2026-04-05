@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.whist
 
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.animateColorAsState
@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.min
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.whistrentzscorer.ui.WhistTopBar
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.Orange40
 import com.example.whistrentzscorer.viewmodels.GameStateViewModel
@@ -121,7 +120,7 @@ fun RoundActionScreen(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "") },
                 onBack = onBack
             )

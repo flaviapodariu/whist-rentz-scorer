@@ -1,4 +1,4 @@
-package com.example.whistrentzscorer.components
+package com.example.whistrentzscorer.components.shared
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -40,7 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.storage.entity.GameEntity
-import com.example.whistrentzscorer.ui.WhistTopBar
+import com.example.whistrentzscorer.components.whist.AppTopBar
 import com.example.whistrentzscorer.ui.theme.SlateBlue
 import com.example.whistrentzscorer.utils.toFormattedDate
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
@@ -57,7 +57,7 @@ fun GamesHistory(
 
     Scaffold(
         topBar = {
-            WhistTopBar(
+            AppTopBar(
                 title = { Text(text = "Games History") },
                 onBack = onBack
             )

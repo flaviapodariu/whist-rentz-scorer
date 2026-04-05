@@ -1,24 +1,19 @@
-package com.example.whistrentzscorer.ui
+package com.example.whistrentzscorer.components.whist
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
@@ -27,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.whistrentzscorer.ui.theme.SoftIndigo
@@ -35,7 +29,7 @@ import com.example.whistrentzscorer.ui.theme.SoftIndigo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WhistTopBar(
+fun AppTopBar(
     title: @Composable () -> Unit,
     onBack: () -> Unit,
     isInGame: Boolean = false,
@@ -156,40 +150,7 @@ fun WhistTopBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeTopBar(
+fun RentzTopBar(
     onSearch: () -> Unit,
 ) {
-    TopAppBar(
-        navigationIcon = {
-            IconButton(
-                onClick = {}  // TODO
-            ) {
-                Icon(
-                    Icons.Filled.Menu,
-                    modifier = Modifier.padding(8.dp),
-                    contentDescription = "App Menu"
-                )
-            }
-        },
-        colors = TopAppBarColors(
-            containerColor = Color.Transparent,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-            actionIconContentColor = MaterialTheme.colorScheme.onSurface,
-            scrolledContainerColor = Color.Magenta,
-            titleContentColor = MaterialTheme.colorScheme.onSurface
-        ),
-        actions = {
-            IconButton(
-                onClick = onSearch
-            ) {
-                Icon(
-                    Icons.Filled.Search,
-                    modifier = Modifier.padding(8.dp),
-                    contentDescription = "Search available games"
-                )
-            }
-        },
-        title = { Text("Game History") },
-
-        )
 }
