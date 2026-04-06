@@ -1,14 +1,12 @@
-package com.example.whistrentzscorer.viewmodels
+package com.example.whistrentzscorer.viewmodels.whist
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.whistrentzscorer.objects.Game
-import com.example.whistrentzscorer.storage.repository.GameRepository
 import com.example.whistrentzscorer.storage.repository.IGameRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject

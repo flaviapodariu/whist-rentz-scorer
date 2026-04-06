@@ -1,7 +1,7 @@
 package com.example.whistrentzscorer
 
 import com.example.whistrentzscorer.storage.repository.IGameRepository
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

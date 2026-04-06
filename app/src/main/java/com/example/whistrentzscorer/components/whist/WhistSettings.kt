@@ -50,7 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
+import com.example.whistrentzscorer.viewmodels.whist.GameConfigViewModel
 import kotlinx.coroutines.launch
 
 val GameType = listOf("11..88..11", "88..11..88")

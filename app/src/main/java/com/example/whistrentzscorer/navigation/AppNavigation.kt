@@ -27,10 +27,10 @@ import com.example.whistrentzscorer.components.whist.RoundActionScreen
 import com.example.whistrentzscorer.components.whist.ScoreSheet
 import com.example.whistrentzscorer.objects.RentzInputType
 import com.example.whistrentzscorer.objects.RentzMiniGame
-import com.example.whistrentzscorer.viewmodels.GameConfigViewModel
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.GameConfigViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
-import com.example.whistrentzscorer.viewmodels.RoundActions
+import com.example.whistrentzscorer.viewmodels.whist.state.RoundActions
 
 
 @Composable

@@ -1,7 +1,7 @@
 package com.example.whistrentzscorer
 
 import com.example.whistrentzscorer.storage.repository.IGameRepository
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

@@ -59,9 +59,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.ui.theme.Coral40
 import com.example.whistrentzscorer.ui.theme.Orange40
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
-import com.example.whistrentzscorer.viewmodels.RoundActions
-import com.example.whistrentzscorer.viewmodels.RoundState
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.RoundActions
+import com.example.whistrentzscorer.viewmodels.whist.state.RoundState
 import kotlinx.coroutines.launch
 
 @Composable

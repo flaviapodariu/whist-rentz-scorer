@@ -8,13 +8,10 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.whistrentzscorer.navigation.AppNavigation
 import com.example.whistrentzscorer.ui.theme.WhistRentzScorerTheme
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

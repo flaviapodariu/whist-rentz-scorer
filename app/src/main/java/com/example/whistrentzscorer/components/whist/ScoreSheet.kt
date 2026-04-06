@@ -56,8 +56,9 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.whistrentzscorer.components.shared.GameTimer
 import com.example.whistrentzscorer.ui.theme.DarkPurple
 import com.example.whistrentzscorer.ui.theme.LightLavender
-import com.example.whistrentzscorer.viewmodels.GameStateViewModel
-import com.example.whistrentzscorer.viewmodels.RoundState
+import com.example.whistrentzscorer.viewmodels.whist.state.GameStateViewModel
+import com.example.whistrentzscorer.viewmodels.whist.state.RoundState
+import com.example.whistrentzscorer.viewmodels.whist.state.ScoreAdjustment
 
 @Composable
 fun ScoreSheet(
@@ -91,6 +92,7 @@ fun ScoreSheet(
     var showUndoConfirmation by remember { mutableStateOf(false) }
     var showPodium by remember { mutableStateOf(false) }
 
+    // can i only use is game finished?
     LaunchedEffect(stateVM.currentRound) {
         if (stateVM.isGameFinished) {
             showPodium = true
@@ -271,7 +273,7 @@ fun ScoringCells(
                     val bid = playerState?.bid
                     val handsTaken = playerState?.handsTaken
                     val bidFailed = bid != null && handsTaken != null && bid != handsTaken
-                    val bonusAdjustment = playerState?.bonusAdjustment ?: 0
+                    val bonusAdjustment = playerState?.bonusAdjustment ?: ScoreAdjustment.NONE
 
                     ScoreCell(
                         score = bid,
@@ -404,7 +406,11 @@ fun TotalScoreRow(
 }
 
 @Composable
-fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false, bonusAdjustment: Int = 0) {
+fun ScoreCell(score: Int?,
+              width: Dp,
+              showCross: Boolean = false,
+              bonusAdjustment: ScoreAdjustment = ScoreAdjustment.NONE
+) {
     Box(
         modifier = Modifier
             .width(width)
@@ -416,15 +422,15 @@ fun ScoreCell(score: Int?, width: Dp, showCross: Boolean = false, bonusAdjustmen
         Text(text = displayScore)
         
         // Show bonus indicator positioned to the right
-        if (bonusAdjustment != 0) {
+        if (bonusAdjustment != ScoreAdjustment.NONE) {
             Box(
                 modifier = Modifier.matchParentSize()
                     .padding(end = 4.dp),
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Text(
-                    text = if (bonusAdjustment > 0) "✓" else "✗",
-                    color = if (bonusAdjustment > 0) Color(0xFF4CAF50) else Color(0xFFE53935),
+                    text = if (bonusAdjustment == ScoreAdjustment.BONUS_AWARDED) "✓" else "✗",
+                    color = if (bonusAdjustment == ScoreAdjustment.BONUS_AWARDED) Color(0xFF4CAF50) else Color(0xFFE53935),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
