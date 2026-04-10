@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.example.whistrentzscorer.utils.GameMode
 import com.example.whistrentzscorer.viewmodels.whist.GameConfigViewModel
 import kotlinx.coroutines.launch
 
@@ -245,13 +246,13 @@ fun GameSetupScreen(
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        if (viewModel.gameMode == "rentz") {
+        if (viewModel.gameMode == GameMode.RENTZ) {
             val gameId = viewModel.createNewGame()
             onGameStarted(gameId)
         }
     }
 
-    if (viewModel.gameMode == "rentz") return
+    if (viewModel.gameMode == GameMode.RENTZ) return
 
     Scaffold(
         topBar = {

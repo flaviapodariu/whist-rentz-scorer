@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.whistrentzscorer.objects.RentzMiniGame
 import com.example.whistrentzscorer.storage.repository.IGameRepository
+import com.example.whistrentzscorer.utils.GameMode
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,13 +39,13 @@ class GameStateViewModel @Inject constructor(
     val currentRoundBidsPlaced: Boolean
         get() = allBidsPlaced(currentRound)
 
-    var gameType: String = "11..88..11"
+    var roundOrdering: String = "11..88..11"
         private set
 
     var gameId: Int = 0
         private set
 
-    var gameMode: String by mutableStateOf("whist")
+    var gameMode: GameMode by mutableStateOf(GameMode.WHIST)
         private set
 
     var bonusPoints: Int = 0
@@ -102,10 +103,10 @@ class GameStateViewModel @Inject constructor(
         autoSave()
     }
 
-    fun isRentzGame(): Boolean = gameMode == "rentz"
+    fun isRentzGame(): Boolean = gameMode == GameMode.RENTZ
 
     private fun updateCurrentRoundCards() {
-        currentRoundCards = cardsThisRound(currentRound, gameType, playerList.size)
+        currentRoundCards = cardsThisRound(currentRound, roundOrdering, playerList.size)
     }
 
     fun advanceRound() {
@@ -114,13 +115,17 @@ class GameStateViewModel @Inject constructor(
         autoSave()
     }
 
-    fun init(players: List<String>, gameType: String = "11..88..11", gameMode: String = "whist", bonus: Int = 0) {
+    fun init(players: List<String>,
+             roundOrdering: String = "11..88..11",
+             gameMode: GameMode = GameMode.WHIST,
+             bonus: Int = 0
+    ) {
         playerList = players
-        this.gameType = gameType
+        this.roundOrdering = roundOrdering
         this.gameMode = gameMode
         this.bonusPoints = bonus
 
-        if (gameMode == "rentz") {
+        if (isRentzGame()) {
             // Rentz has 8 sub-games per player who calls
             totalRounds = 0
             rentzScores.clear()
@@ -149,8 +154,6 @@ class GameStateViewModel @Inject constructor(
        return (currentRound - 1) % playerList.size
     }
 
-    fun getGameState(): GameState = game
-
     fun getRoundStateForPlayer(round: Int, playerIndex: Int): RoundState {
         val player = playerList[playerIndex]
 
@@ -173,54 +176,53 @@ class GameStateViewModel @Inject constructor(
     }
 
     fun saveRoundScore(round: Int) {
-        val cardsInRound = cardsThisRound(round, gameType, playerList.size)
-        
+        val cardsInRound = cardsThisRound(round, roundOrdering, playerList.size)
+
         playerList.forEach { player ->
             val currentPlayerState = game.state[round]?.get(player)
             val previousPlayerState = game.state[round - 1]?.get(player)
-            
+
             val bid = currentPlayerState?.bid ?: 0
             val handsTaken = currentPlayerState?.handsTaken ?: 0
             val scoreLastRound = previousPlayerState?.score ?: 0
             val previousConsecutiveCorrect = previousPlayerState?.consecutiveCorrectBids ?: 0
             val previousConsecutiveFailed = previousPlayerState?.consecutiveFailedBids ?: 0
-            
+
             val bidCorrect = bid == handsTaken
             var bonusAdjustmentPoints = 0
-            var bonusAdjustmentIndicator = 0
-            var newConsecutiveCorrect = 0
-            var newConsecutiveFailed = 0
-            
-            // Only count consecutive bids for rounds with more than 1 card
-            if (cardsInRound > 1) {
+            var bonusAdjustment = ScoreAdjustment.NONE
+
+
+            if (bonusPoints > 0 && cardsInRound > 1) {
+                var newConsecutiveCorrect: Int
+                var newConsecutiveFailed: Int
+
                 if (bidCorrect) {
                     newConsecutiveCorrect = previousConsecutiveCorrect + 1
-                    newConsecutiveFailed = 0  // Reset failed streak on correct bid
-                    // Award bonus when reaching exactly 5 consecutive correct bids
-                    if (newConsecutiveCorrect == 5 && bonusPoints > 0) {
+                    newConsecutiveFailed = 0
+
+                    if (newConsecutiveCorrect == 5) {
                         bonusAdjustmentPoints = bonusPoints
-                        bonusAdjustmentIndicator = 1  // +1 for bonus awarded
-                        newConsecutiveCorrect = 0 // Reset after awarding bonus
+                        bonusAdjustment =
+                            ScoreAdjustment.BONUS_AWARDED
+                        newConsecutiveCorrect = 0
                     }
                 } else {
-                    newConsecutiveCorrect = 0  // Reset correct streak on failed bid
+                    newConsecutiveCorrect = 0
                     newConsecutiveFailed = previousConsecutiveFailed + 1
-                    // Deduct bonus when reaching exactly 5 consecutive failed bids
-                    if (newConsecutiveFailed == 5 && bonusPoints > 0) {
+
+                    if (newConsecutiveFailed == 5) {
                         bonusAdjustmentPoints = -bonusPoints
-                        bonusAdjustmentIndicator = -1  // -1 for bonus deducted
-                        newConsecutiveFailed = 0  // Reset after deducting bonus
+                        bonusAdjustment = ScoreAdjustment.BONUS_DEDUCTED
+                        newConsecutiveFailed = 0
                     }
                 }
-            } else {
-                // For 1-card rounds, maintain the previous consecutive counts
-                newConsecutiveCorrect = previousConsecutiveCorrect
-                newConsecutiveFailed = previousConsecutiveFailed
+
+                currentPlayerState?.consecutiveCorrectBids = newConsecutiveCorrect
+                currentPlayerState?.consecutiveFailedBids = newConsecutiveFailed
+                currentPlayerState?.bonusAdjustment = bonusAdjustment
             }
-            
-            currentPlayerState?.consecutiveCorrectBids = newConsecutiveCorrect
-            currentPlayerState?.consecutiveFailedBids = newConsecutiveFailed
-            currentPlayerState?.bonusAdjustment = bonusAdjustmentIndicator
+
             currentPlayerState?.score = scoreLastRound + whistScoring(bid, handsTaken) + bonusAdjustmentPoints
         }
     }
@@ -256,20 +258,14 @@ class GameStateViewModel @Inject constructor(
         viewModelScope.launch {
             val saveData = SaveData(
                 currentRound = currentRound,
-                gameType = gameType,
+                gameType = roundOrdering,
                 bonusPoints = bonusPoints,
-                state = game.state.mapKeys { (k, _) -> k.toString() }.mapValues { (_, playerMap) ->
-                    playerMap.mapValues { (_, rs) ->
-                        SerializableRoundState(
-                            rs.bid,
-                            rs.handsTaken,
-                            rs.score,
-                            rs.consecutiveCorrectBids,
-                            rs.consecutiveFailedBids,
-                            rs.bonusAdjustment.ordinal
-                        )
+                state = game.state.mapKeys { (round, _) -> round.toString() }
+                    .mapValues { (_, players) ->
+                        players.mapValues { (_, roundState) ->
+                            roundState.toVO()
+                        }
                     }
-                }
             )
             val json = gson.toJson(saveData)
             gameRepository.updateScore(gameId, json)
@@ -277,11 +273,18 @@ class GameStateViewModel @Inject constructor(
         }
     }
 
-    fun restoreGame(id: Int, players: List<String>, scoresJson: String, elapsedTime: Long = 0L) {
+    fun restoreGame(
+        id: Int,
+        players: List<String>,
+        scoresJson: String,
+        gameMode: GameMode,
+        elapsedTime: Long = 0L
+    ) {
         gameId = id
+        this.gameMode = gameMode
         
         if (scoresJson.isBlank()) {
-            init(players)
+            init(players, gameMode = gameMode)
             return
         }
 
@@ -290,7 +293,7 @@ class GameStateViewModel @Inject constructor(
             val saveData: SaveData = gson.fromJson(scoresJson, type)
 
             playerList = players
-            gameType = saveData.gameType
+            roundOrdering = saveData.gameType
             bonusPoints = saveData.bonusPoints
             currentRound = saveData.currentRound
             elapsedSeconds = elapsedTime
@@ -317,7 +320,7 @@ class GameStateViewModel @Inject constructor(
             }
             updateCurrentRoundCards()
         } catch (e: Exception) {
-            init(players)
+            init(players, gameMode = gameMode)
         }
     }
 
@@ -348,18 +351,18 @@ fun whistScoring(bid: Int, handsTaken: Int): Int {
     return -abs(bid - handsTaken)
 }
 
-data class SerializableRoundState(
+data class RoundStateVO(
     val bid: Int? = null,
     val handsTaken: Int? = null,
     val score: Int? = null,
     val consecutiveCorrectBids: Int = 0,
     val consecutiveFailedBids: Int = 0,
-    val bonusAdjustment: Int = 0
+    val bonusAdjustment: ScoreAdjustment = ScoreAdjustment.NONE
 )
 
 data class SaveData(
     val currentRound: Int,
     val gameType: String,
     val bonusPoints: Int = 0,
-    val state: Map<String, Map<String, SerializableRoundState>>
+    val state: Map<String, Map<String, RoundStateVO>>
 )

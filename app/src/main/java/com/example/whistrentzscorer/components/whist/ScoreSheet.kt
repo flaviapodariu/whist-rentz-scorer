@@ -196,7 +196,7 @@ fun ScoreSheet(
                                     Text(
                                         text = stateVM.cardsThisRound(
                                             round = round,
-                                            stateVM.gameType,
+                                            stateVM.roundOrdering,
                                             playerCount = stateVM.playerList.size
                                         ).toString()
                                     )

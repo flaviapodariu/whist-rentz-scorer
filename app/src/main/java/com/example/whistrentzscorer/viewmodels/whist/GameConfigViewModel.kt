@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.whistrentzscorer.objects.Game
 import com.example.whistrentzscorer.storage.repository.IGameRepository
+import com.example.whistrentzscorer.utils.GameMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -26,7 +27,7 @@ class GameConfigViewModel @Inject constructor(
 
     var zeroPointsWins by mutableStateOf(false)
 
-    var gameMode by mutableStateOf("whist")
+    var gameMode: GameMode by mutableStateOf(GameMode.WHIST)
 
 
     suspend fun createNewGame(): Long {
@@ -35,7 +36,7 @@ class GameConfigViewModel @Inject constructor(
             players = getPlayerList(),
             isFinished = false,
             scoresJson = "",
-            gameType = gameMode
+            gameMode = gameMode
         )
         return gameRepository.addGame(newGame)
     }

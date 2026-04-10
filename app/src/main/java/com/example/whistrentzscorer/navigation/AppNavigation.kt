@@ -87,6 +87,7 @@ fun AppNavigation(
                 id = savedGame.id,
                 players = savedGame.players,
                 scoresJson = savedGame.scoresJson,
+                gameMode = savedGame.gameMode,
                 elapsedTime = savedGame.elapsedTime
             )
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
@@ -266,6 +267,7 @@ fun AppNavigation(
                         id = game.id,
                         players = players,
                         scoresJson = game.scoresJson,
+                        gameMode = game.gameMode,
                         elapsedTime = game.elapsedTime
                     )
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE

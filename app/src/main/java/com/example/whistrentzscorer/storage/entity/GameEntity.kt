@@ -3,6 +3,7 @@ package com.example.whistrentzscorer.storage.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.whistrentzscorer.objects.Game
+import com.example.whistrentzscorer.utils.GameMode
 
 @Entity(
     tableName = "games"
@@ -14,7 +15,7 @@ data class GameEntity (
     val players: String,
     val isFinished: Boolean,
     val scoresJson: String,
-    val gameType: String = "whist",
+    val gameMode: GameMode = GameMode.WHIST,
     val elapsedTime: Long = 0L
 ) {
     fun parsePlayers(): List<String> {
@@ -29,7 +30,7 @@ fun GameEntity.toDomain(): Game {
         scoresJson = scoresJson,
         isFinished = isFinished,
         players = parsePlayers(),
-        gameType = gameType,
+        gameMode = gameMode,
         elapsedTime = elapsedTime
     )
 }

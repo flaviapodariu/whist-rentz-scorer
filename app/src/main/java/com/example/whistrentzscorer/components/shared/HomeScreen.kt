@@ -63,6 +63,7 @@ import com.example.whistrentzscorer.ui.theme.DeepPurpleButton
 import com.example.whistrentzscorer.ui.theme.LightLavender
 import com.example.whistrentzscorer.ui.theme.PaleBlue
 import com.example.whistrentzscorer.ui.theme.SoftIndigo
+import com.example.whistrentzscorer.utils.GameMode
 import com.example.whistrentzscorer.viewmodels.HomeViewModel
 
 @Composable
@@ -84,8 +85,8 @@ fun HomeScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         GameModeToggle(
-            selectedMode = selectedGameMode,
-            onModeChanged = { viewModel.setGameMode(it) }
+            selectedMode = selectedGameMode.name,
+            onModeChanged = { viewModel.setGameMode(GameMode.fromString(it)!!) }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -304,7 +305,7 @@ fun HomeScreenV2(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
-                        text = if (selectedGameMode == "whist") "Whist" else "Rentz",
+                        text = selectedGameMode.name,
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = SoftIndigo
@@ -314,15 +315,13 @@ fun HomeScreenV2(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // ── Game mode toggle ────────────────────────────────────────
             GameModeToggle(
-                selectedMode = selectedGameMode,
-                onModeChanged = { viewModel.setGameMode(it) }
+                selectedMode = selectedGameMode.name,
+                onModeChanged = { viewModel.setGameMode(GameMode.fromString(it)!!) }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // ── Action cards ────────────────────────────────────────────
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(tween(800, delayMillis = 200)) + slideInVertically(

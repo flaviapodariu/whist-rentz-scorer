@@ -2,7 +2,7 @@ package com.example.whistrentzscorer
 
 import com.example.whistrentzscorer.components.whist.enabledCondition
 import com.example.whistrentzscorer.components.whist.getIllegalChoice
-import com.example.whistrentzscorer.components.handsTakenSoFar
+import com.example.whistrentzscorer.components.whist.handsTakenSoFar
 import com.example.whistrentzscorer.components.whist.isLastPlayer
 import com.example.whistrentzscorer.viewmodels.whist.state.RoundActions
 import com.example.whistrentzscorer.viewmodels.whist.state.RoundState
